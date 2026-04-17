@@ -1,0 +1,18 @@
+{
+  "slug": "notrevillagemonvillage",
+  "name": "Notre Village Mon Village",
+  "subtitle": "Animations locales et patrimoine vivant",
+  "description": "L'association organise la Fête de la Musique, les Rendez vous aux Jardins, ainsi que d'autres événements dans le village.",
+  "contactEmail": "contact-temporaire@nvmv-wangen.fr",
+  "events": [
+    {
+      "id": "nvmv-rendezvous-aux-jardins-2026-06-07",
+      "slug": "rendezvous-aux-jardins-2026",
+      "title": "Rendez vous aux jardins",
+      "date": "2026-06-07",
+      "location": "Wangen",
+      "description": "Journée conviviale autour des jardins du village.",
+      "body": "Programme détaillé et horaires précis seront publiés prochainement."
+    }
+  ]
+}
