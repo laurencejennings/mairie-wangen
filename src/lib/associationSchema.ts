@@ -9,9 +9,25 @@ export type AssociationEvent = {
   slug: string;
   title: string;
   date: string;
+  /**
+   * Normalized start time in HH:MM format.
+   * Input can be "9h", "09:00", "9h-17h", "9h à 17h", etc.
+   */
   time?: string;
+  /**
+   * Normalized end time in HH:MM format when a range is provided.
+   */
+  endTime?: string;
+  /**
+   * Display-friendly French label, for example "9h-17h".
+   */
+  timeLabel?: string;
   location: string;
   description?: string;
+  /**
+   * Normalized markdown string.
+   * JSON input may be either a string or an array of strings.
+   */
   body?: string;
   banner?: EventPhoto;
   main?: EventPhoto;
@@ -28,10 +44,17 @@ export type AssociationData = {
   events: AssociationEvent[];
 };
 
+type ParsedEventTime = {
+  start: string;
+  end?: string;
+  label: string;
+};
+
 const SLUG_PATTERN = /^[a-z0-9-]+$/;
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const HH_MM_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const TIME_PART_PATTERN = /^([01]?\d|2[0-3])(?:(?::|h)([0-5]\d)?)?$/i;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -39,6 +62,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function readRequiredString(record: Record<string, unknown>, key: string, source: string): string {
   const value = record[key];
+
   if (typeof value !== 'string' || value.trim().length === 0) {
     throw new Error(`${source}: "${key}" must be a non-empty string.`);
   }
@@ -48,6 +72,7 @@ function readRequiredString(record: Record<string, unknown>, key: string, source
 
 function readOptionalString(record: Record<string, unknown>, key: string, source: string): string | undefined {
   const value = record[key];
+
   if (value === undefined) {
     return undefined;
   }
@@ -60,20 +85,131 @@ function readOptionalString(record: Record<string, unknown>, key: string, source
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function readOptionalMarkdownBody(
+  record: Record<string, unknown>,
+  key: string,
+  source: string,
+): string | undefined {
+  const value = record[key];
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  if (Array.isArray(value)) {
+    const lines = value.map((line, index) => {
+      if (typeof line !== 'string') {
+        throw new Error(`${source}: "${key}[${index}]" must be a string.`);
+      }
+
+      return line;
+    });
+
+    const joined = lines.join('\n').trim();
+    return joined.length > 0 ? joined : undefined;
+  }
+
+  throw new Error(`${source}: "${key}" must be a string or an array of strings when provided.`);
+}
+
+function parseTimePart(raw: string, source: string, key: string): string {
+  const value = raw.trim().toLowerCase().replace(/\s+/g, '');
+
+  const match = value.match(TIME_PART_PATTERN);
+  if (!match) {
+    throw new Error(
+      `${source}: "${key}" has invalid time part "${raw}". Expected formats like "09:00", "9h", or "9h30".`,
+    );
+  }
+
+  const hour = Number(match[1]);
+  const minute = match[2] ?? '00';
+
+  return `${String(hour).padStart(2, '0')}:${minute.padStart(2, '0')}`;
+}
+
+function timeToMinutes(time: string): number {
+  const [hour, minute] = time.split(':').map(Number);
+  return hour * 60 + minute;
+}
+
+function formatFrenchTime(time: string): string {
+  const [hourRaw, minute] = time.split(':');
+  const hour = Number(hourRaw);
+
+  return minute === '00' ? `${hour}h` : `${hour}h${minute}`;
+}
+
+function readOptionalEventTime(
+  record: Record<string, unknown>,
+  key: string,
+  source: string,
+): ParsedEventTime | undefined {
+  const value = record[key];
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== 'string') {
+    throw new Error(`${source}: "${key}" must be a string when provided.`);
+  }
+
+  const raw = value.trim();
+  if (raw.length === 0) {
+    return undefined;
+  }
+
+  const normalizedRangeText = raw
+    .replace(/[–—]/g, '-')
+    .replace(/\s+(?:à|a|to)\s+/i, '-');
+
+  const parts = normalizedRangeText.split(/\s*-\s*/);
+
+  if (parts.length > 2 || parts.some((part) => part.trim().length === 0)) {
+    throw new Error(
+      `${source}: "${key}" must be a single time or a time range, for example "09:00", "9h", or "9h-17h".`,
+    );
+  }
+
+  const start = parseTimePart(parts[0], source, key);
+  const end = parts[1] ? parseTimePart(parts[1], source, key) : undefined;
+
+  if (end && timeToMinutes(end) <= timeToMinutes(start)) {
+    throw new Error(`${source}: "${key}" has invalid range "${raw}". End time must be after start time.`);
+  }
+
+  return {
+    start,
+    end,
+    label: end ? `${formatFrenchTime(start)}-${formatFrenchTime(end)}` : formatFrenchTime(start),
+  };
+}
+
 function validateEvent(event: unknown, source: string): AssociationEvent {
   if (!isRecord(event)) {
     throw new Error(`${source}: each event must be an object.`);
   }
+
+  const parsedTime = readOptionalEventTime(event, 'time', source);
+  const timeLabelOverride = readOptionalString(event, 'timeLabel', source);
 
   const parsed: AssociationEvent = {
     id: readRequiredString(event, 'id', source),
     slug: readRequiredString(event, 'slug', source),
     title: readRequiredString(event, 'title', source),
     date: readRequiredString(event, 'date', source),
-    time: readOptionalString(event, 'time', source),
+    time: parsedTime?.start,
+    endTime: parsedTime?.end,
+    timeLabel: timeLabelOverride ?? parsedTime?.label,
     location: readRequiredString(event, 'location', source),
     description: readOptionalString(event, 'description', source),
-    body: readOptionalString(event, 'body', source),
+    body: readOptionalMarkdownBody(event, 'body', source),
     banner: undefined,
     main: undefined,
     carousel: undefined,
@@ -86,10 +222,6 @@ function validateEvent(event: unknown, source: string): AssociationEvent {
 
   if (!ISO_DATE_PATTERN.test(parsed.date)) {
     throw new Error(`${source}: event "${parsed.id}" has invalid "date" (${parsed.date}). Expected YYYY-MM-DD.`);
-  }
-
-  if (parsed.time && !HH_MM_PATTERN.test(parsed.time)) {
-    throw new Error(`${source}: event "${parsed.id}" has invalid "time" (${parsed.time}). Expected HH:MM (24h).`);
   }
 
   const parsePhoto = (photo: unknown, field: string, index?: number): EventPhoto => {
@@ -167,6 +299,7 @@ export function validateAssociationData(raw: unknown, source: string): Associati
 
   const ids = new Set<string>();
   const slugs = new Set<string>();
+
   for (const event of parsed.events) {
     if (ids.has(event.id)) {
       throw new Error(`${source}: duplicate event id "${event.id}".`);

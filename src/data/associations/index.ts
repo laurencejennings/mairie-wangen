@@ -1,4 +1,5 @@
 import cercleRaw from './cercledhistoires.json';
+import communeRaw from './commune.json';
 import notreVillageRaw from './notrevillagemonvillage.json';
 import type { AssociationData } from '../../lib/associationSchema';
 import { validateAssociationData } from '../../lib/associationSchema';
@@ -6,6 +7,7 @@ import { validateAssociationData } from '../../lib/associationSchema';
 const associations: AssociationData[] = [
   validateAssociationData(notreVillageRaw, 'src/data/associations/notrevillagemonvillage.json'),
   validateAssociationData(cercleRaw, 'src/data/associations/cercledhistoires.json'),
+  validateAssociationData(communeRaw, 'src/data/associations/commune.json'),
 ];
 
 const associationsBySlug = new Map(associations.map((association) => [association.slug, association]));

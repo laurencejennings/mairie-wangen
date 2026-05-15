@@ -1,16 +1,13 @@
 import type { ReactNode } from 'react';
 import {
   CalendarDays,
-  ChevronRight,
   Clock3,
   DoorOpen,
-  FileText,
-  Hammer,
-  House,
   Mail,
   MapPin,
   Phone,
   PhoneCall,
+  CalendarCheck,
   type LucideIcon,
 } from 'lucide-react';
 import { listAssociations } from './data/associations';
@@ -44,18 +41,11 @@ type UpcomingEvent = {
   eventPath: string;
 };
 
-type CitizenAction = {
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  href: string;
-  tag: string;
-};
 
 const mairie = {
   name: 'Mairie de Wangen',
   subtitle: 'Wangen, premier village fortifié sur la Route des Vins d’Alsace.',
-  scope: 'Retrouvez les informations, démarches et contacts utiles de la commune.',
+  scope: 'Retrouvez les informations, événements et contacts utiles de la commune.',
   addressLines: ['44 Rue des Vignerons', '67520 Wangen'],
   phone: '+33 3 88 87 50 02',
   email: 'contact@mairie-wangen.fr',
@@ -75,33 +65,6 @@ const openingHours: OpeningHour[] = [
     days: 'Lundi, jeudi, vendredi',
     hours: '15:00 – 17:00',
     icon: DoorOpen,
-  },
-];
-
-const citizenActions: CitizenAction[] = [
-  {
-    title: 'Aides à la rénovation',
-    description:
-      'Subventions, accompagnement et informations utiles pour rénover une façade, une toiture ou améliorer un logement.',
-    icon: House,
-    href: '#',
-    tag: 'Habitat',
-  },
-  {
-    title: 'Urbanisme et travaux',
-    description:
-      'Déclaration préalable, permis, pièces à fournir et contacts avant de commencer des travaux.',
-    icon: Hammer,
-    href: '#',
-    tag: 'Démarches',
-  },
-  {
-    title: 'Formulaires et documents',
-    description:
-      'Téléchargements, formulaires communaux et documents pratiques à retrouver au même endroit.',
-    icon: FileText,
-    href: '#',
-    tag: 'Documents',
   },
 ];
 
@@ -205,21 +168,6 @@ function SectionTitle({ eyebrow, title, description }: { eyebrow: string; title:
   );
 }
 
-function SmallTag({ children, gold = false }: { children: ReactNode; gold?: boolean }) {
-  return (
-    <span
-      className="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold"
-      style={{
-        borderColor: gold ? '#F2C31855' : '#1457F225',
-        backgroundColor: gold ? COLORS.goldSoft : COLORS.blueSoft,
-        color: gold ? COLORS.ink : COLORS.blue,
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
 function TopAction({ href, children, primary = false }: { href: string; children: ReactNode; primary?: boolean }) {
   return (
     <a
@@ -294,18 +242,26 @@ function HoursBlock() {
             className="rounded-2xl border bg-white px-3 py-2.5 text-sm"
             style={{ borderColor: '#F2C31833' }}
           >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex items-start justify-between gap-3 sm:items-center">
+              <div className="flex min-w-0 items-start gap-2.5 sm:items-center">
                 <div className="rounded-lg p-1.5" style={{ backgroundColor: COLORS.blueSoft, color: COLORS.blue }}>
                   <item.icon className="h-4 w-4" />
                 </div>
-                <span className="truncate font-semibold text-slate-800">{item.label}</span>
+                <span className="font-semibold leading-tight text-slate-800">{item.label}</span>
               </div>
               <span className="shrink-0 whitespace-nowrap font-semibold text-slate-700">{item.hours}</span>
             </div>
             <div className="mt-1.5 pl-9 text-xs text-slate-500">{item.days}</div>
           </div>
         ))}
+        <div className="rounded-2xl  bg-white px-3 py-2.5 text-sm">
+              <div className="flex min-w-0 items-start gap-2.5 sm:items-center">
+          <div className="rounded-lg p-1.5" style={{ backgroundColor: COLORS.blueSoft, color: COLORS.blue }}>
+            <CalendarCheck className="h-4 w-4" /> 
+            </div>
+            <span className="shrink-0 whitespace-nowrap font-semibold text-slate-700">Et sur rendez-vous</span>
+            </div>
+        </div>
       </div>
     </div>
   );
@@ -358,31 +314,6 @@ function EmptyAgenda() {
         Les prochains événements apparaîtront ici dès qu’ils seront publiés depuis le back-office.
       </p>
     </div>
-  );
-}
-
-function CitizenActionCard({ item }: { item: CitizenAction }) {
-  const Icon = item.icon;
-
-  return (
-    <a
-      href={item.href}
-      className="block rounded-[24px] border p-4 transition hover:shadow-[0_10px_24px_rgba(20,33,61,0.08)]"
-      style={{ borderColor: COLORS.line, backgroundColor: '#FFFFFF' }}
-    >
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="rounded-2xl p-3" style={{ backgroundColor: COLORS.blueSoft, color: COLORS.blue }}>
-          <Icon className="h-5 w-5" />
-        </div>
-        <SmallTag gold>{item.tag}</SmallTag>
-      </div>
-      <h3 className="text-base font-semibold text-slate-900">{item.title}</h3>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-      <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold" style={{ color: COLORS.blue }}>
-        Ouvrir
-        <ChevronRight className="h-4 w-4" />
-      </div>
-    </a>
   );
 }
 

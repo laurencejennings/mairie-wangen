@@ -1,4 +1,5 @@
 import { ArrowLeft, CalendarDays, Clock3, Image as ImageIcon, MapPin } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import type { AssociationData, AssociationEvent } from '../lib/associationSchema';
 import { getAutoEventMedia } from '../lib/eventMedia';
 
@@ -21,15 +22,48 @@ function formatEventDate(dateIso: string) {
   }).format(date);
 }
 
+function formatFrenchTime(time: string) {
+  const trimmed = time.trim();
+
+  const match = trimmed.match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  if (!match) {
+    return trimmed;
+  }
+
+  const hour = Number(match[1]);
+  const minute = match[2];
+
+  return minute === '00' ? `${hour}h` : `${hour}h${minute}`;
+}
+
+function formatEventTime(event: AssociationEvent) {
+  if (event.timeLabel) {
+    return event.timeLabel;
+  }
+
+  if (event.time && event.endTime) {
+    return `${formatFrenchTime(event.time)}-${formatFrenchTime(event.endTime)}`;
+  }
+
+  if (event.time) {
+    return formatFrenchTime(event.time);
+  }
+
+  return 'Horaire à venir';
+}
+
 export default function EventPage({ association, event }: EventPageProps) {
   const autoMedia = getAutoEventMedia(association.slug, event.slug);
   const banner = event.banner?.src ?? autoMedia.banner;
   const main = event.main?.src ?? autoMedia.main;
+
   const carouselPhotos: Array<{ src: string; alt?: string; caption?: string }> =
     event.carousel?.map((photo) => ({ src: photo.src, alt: photo.alt, caption: photo.caption })) ??
     event.gallery?.map((photo) => ({ src: photo.src, alt: photo.alt, caption: photo.caption })) ??
     autoMedia.carousel?.map((src) => ({ src })) ??
     [];
+
+  const bodyMarkdown = event.body;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -42,6 +76,7 @@ export default function EventPage({ association, event }: EventPageProps) {
             <ArrowLeft className="h-4 w-4" />
             Retour {association.name}
           </a>
+
           <a
             href="/"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
@@ -52,7 +87,11 @@ export default function EventPage({ association, event }: EventPageProps) {
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Événement</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">{event.title}</h1>
+
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            {event.title}
+          </h1>
+
           <p className="mt-2 text-sm font-medium text-blue-700">{association.name}</p>
 
           {banner ? (
@@ -63,6 +102,7 @@ export default function EventPage({ association, event }: EventPageProps) {
                 className="h-56 w-full object-contain sm:h-72"
                 loading="eager"
               />
+
               {event.banner?.caption ? (
                 <figcaption className="px-3 py-2 text-xs text-slate-600">{event.banner.caption}</figcaption>
               ) : null}
@@ -74,10 +114,12 @@ export default function EventPage({ association, event }: EventPageProps) {
               <CalendarDays className="h-4 w-4 text-blue-700" />
               {formatEventDate(event.date)}
             </div>
+
             <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
               <Clock3 className="h-4 w-4 text-blue-700" />
-              {event.time ?? 'Horaire à venir'}
+              {formatEventTime(event)}
             </div>
+
             <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
               <MapPin className="h-4 w-4 text-blue-700" />
               {event.location}
@@ -88,8 +130,40 @@ export default function EventPage({ association, event }: EventPageProps) {
             <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-600">{event.description}</p>
           ) : null}
 
-          {event.body ? (
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">{event.body}</p>
+          {bodyMarkdown ? (
+            <div className="mt-5 max-w-3xl text-sm leading-6 text-slate-600">
+              <ReactMarkdown
+                components={{
+                  h2: ({ children }) => (
+                    <h2 className="mt-6 text-xl font-semibold tracking-tight text-slate-950">
+                      {children}
+                    </h2>
+                  ),
+                  h3: ({ children }) => (
+                    <h3 className="mt-5 text-lg font-semibold tracking-tight text-slate-950">
+                      {children}
+                    </h3>
+                  ),
+                  p: ({ children }) => <p className="mt-3">{children}</p>,
+                  ul: ({ children }) => <ul className="mt-3 list-disc space-y-1 pl-5">{children}</ul>,
+                  ol: ({ children }) => <ol className="mt-3 list-decimal space-y-1 pl-5">{children}</ol>,
+                  li: ({ children }) => <li>{children}</li>,
+                  strong: ({ children }) => <strong className="font-semibold text-slate-900">{children}</strong>,
+                  a: ({ href, children }) => (
+                    <a
+                      href={href}
+                      className="font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
+                {bodyMarkdown}
+              </ReactMarkdown>
+            </div>
           ) : null}
 
           {main ? (
@@ -100,6 +174,7 @@ export default function EventPage({ association, event }: EventPageProps) {
                 className="mx-auto max-h-[70vh] w-full object-contain"
                 loading="lazy"
               />
+
               {event.main?.caption ? (
                 <figcaption className="px-3 py-2 text-xs text-slate-600">{event.main.caption}</figcaption>
               ) : null}
@@ -113,6 +188,7 @@ export default function EventPage({ association, event }: EventPageProps) {
               <ImageIcon className="h-4 w-4 text-blue-700" />
               Galerie photo
             </div>
+
             <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2">
               {carouselPhotos.map((photo) => (
                 <figure
@@ -125,6 +201,7 @@ export default function EventPage({ association, event }: EventPageProps) {
                     className="h-56 w-full object-contain"
                     loading="lazy"
                   />
+
                   {photo.caption ? (
                     <figcaption className="px-3 py-2 text-xs text-slate-600">{photo.caption}</figcaption>
                   ) : null}

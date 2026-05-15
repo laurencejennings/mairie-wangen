@@ -1,0 +1,103 @@
+{
+  "slug": "commune",
+  "name": "Commune de Wangen - Événements",
+  "subtitle": "Événements locaux et culturels",
+  "description": "La commune de Wangen vous invite à découvrir ses événements locaux et culturels.",
+  "contactEmail": "contact@mairie-wangen.fr",
+  "events": [
+    {
+      "id": "bacchustours-2026-05-17",
+      "slug": "bacchustours-2026-05-17",
+      "title": "Bacchus Tour'S",
+      "date": "2026-05-17",
+      "time": "09:00-17:00",
+      "location": "Wangen",
+      "description": "Le Bacchus Tours : l'événement sportif, festif et gratuit",
+      "body": [
+    "## Bacchus Tours : vélo, VTT ou randonnée",
+    "",
+    "La commune de Wangen, pour la 4ème édition du Bacchus Tours, vous invite à découvrir Wangen avec une visite du village et des remparts en Alsacien par le Cercle d'Histoire de Wangen - rdv à la salle des fêtes 14h30.",
+    "Bloosbrider, Stammtisch et Artisans de 10h a 17h dans la cour de l'ecole.",
+    "Pour l'événement, des circuits **vélo**, **VTT** et **randonnée** ont été imaginés.",
+    "",
+    "### Parcours proposés",
+    "",
+    "- **3 circuits vélo** : 8 km, 25 km et 32 km",
+    "- **2 circuits VTT** : 12 km et 41 km",
+    "- **4 circuits randonnée** : 8 km, 9 km, 12,5 km et 13,5 km",
+    "",
+    "[Consulter toutes les informations pratiques](https://www.mossig-vignoble-tourisme.fr/bacchustours/)"
+  ]
+    },
+    {
+      "id": "kermesse-enchantee-freihof-2026-05-23",
+      "slug": "kermesse-enchantee-freihof-2026-05-23",
+      "title": "La kermesse enchantée du Freihof",
+      "date": "2026-05-23",
+      "time": "11:30-21:00",
+      "location": "Le Freihof, 45 rue des Vignerons, 67520 Wangen",
+      "description": "Le Freihof invite les habitants, familles et visiteurs à une journée festive, conviviale et solidaire à Wangen.",
+      "body": [
+        "## La kermesse enchantée du Freihof",
+        "",
+        "Le Freihof vous invite à partager une journée placée sous le signe de la convivialité, de la fête et de la solidarité, dans une ambiance enchantée à l'entrée du village.",
+        "",
+        "Familles, amis, voisins et visiteurs sont les bienvenus pour découvrir cet événement porté par les enfants, le personnel et les bénévoles du Freihof.",
+        "",
+        "[Consulter toutes les informations sur la kermesse enchantée du Freihof sur le site Il Etait une Fois Wangen](https://www.wangen-village.alsace/2026/04/13/la-kermesse-enchant%C3%A9-du-freihof-%C3%A0-wangen)"
+      ]
+    },
+    {
+      "id": "journee-citoyenne-ramassage-dechets-2026-05-30",
+      "slug": "journee-citoyenne-ramassage-dechets-2026-05-30",
+      "title": "Journée citoyenne : ramassage des déchets",
+      "date": "2026-05-30",
+      "time": "09:00-16:00",
+      "location": "Place de la Mairie, Wangen",
+      "description": "La commune de Wangen invite habitants, familles, amis et voisins à participer à une journée citoyenne de ramassage des déchets.",
+      "body": [
+        "## Wangen : journée citoyenne",
+        "",
+        "La commune de Wangen organise une journée citoyenne dédiée au ramassage des déchets.",
+        "",
+        "L’objectif : nettoyer ensemble notre village et agir collectivement pour un cadre de vie propre et agréable.",
+        "",
+        "### Informations pratiques",
+        "",
+        "- **Date** : samedi 30 mai 2026",
+        "- **Horaire** : de 9h à 16h",
+        "- **Rendez-vous** : Place de la Mairie à Wangen",
+        "",
+        "Sacs et gants seront fournis sur place.",
+        "",
+        "Une action de nettoyage de l’étang de l’Abbesse est également prévue l’après-midi.",
+        "",
+        "Une petite restauration sera proposée au jardin de l’Abbesse et offerte uniquement aux participants.",
+        "",
+        "Venez nombreux en famille, entre amis ou voisins."
+      ]
+    },
+    {
+  "id": "corridas-de-wangen-2026-06-06",
+  "slug": "corridas-de-wangen-2026-06-06",
+  "title": "Corridas de Wangen",
+  "date": "2026-06-06",
+  "time": "13:30",
+  "location": "Wangen",
+  "description": "L’Association Sportive du Vignoble vous donne rendez-vous à Wangen pour la 13e et dernière édition des Corridas de Wangen.",
+  "body": [
+    "## Corridas de Wangen",
+    "",
+    "Le 6 juin 2026, l’Association Sportive du Vignoble organise à Wangen la 13e et dernière édition des Corridas de Wangen.",
+    "",
+    "Cet événement sportif et convivial propose des parcours accessibles à différents niveaux, au cœur du village et des paysages viticoles environnants.",
+    "",
+    "Au programme : course découverte, course nature, trail, animations, restauration et soirée avec DJ.",
+    "",
+    "[Consulter toutes les informations sur Il était une fois Wangen](https://www.wangen-village.alsace/2026/06/06/corridas-de-wangen)",
+    "",
+    "[Informations officielles et inscriptions](https://www.finishers.com/course/corridas-de-wangen)"
+  ]
+}
+  ]
+}
