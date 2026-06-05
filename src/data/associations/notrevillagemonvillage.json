@@ -6,13 +6,28 @@
   "contactEmail": "contact-temporaire@nvmv-wangen.fr",
   "events": [
     {
-      "id": "nvmv-rendezvous-aux-jardins-2026-06-07",
-      "slug": "rendezvous-aux-jardins-2026",
-      "title": "Rendez vous aux jardins",
-      "date": "2026-06-07",
-      "location": "Wangen",
-      "description": "Journée conviviale autour des jardins du village.",
-      "body": "Programme détaillé et horaires précis seront publiés prochainement."
-    }
+  "id": "nvmv-rendezvous-aux-jardins-2026-06-07",
+  "slug": "rendezvous-aux-jardins-2026",
+  "title": "Rendez-vous aux jardins",
+  "date": "2026-06-07",
+  "time": "09:00",
+  "endTime": "17:00",
+  "timeLabel": "9h-17h",
+  "location": "Niedertor, 44 Rue des Vignerons, Wangen",
+  "description": "Une journée conviviale pour ouvrir les yeux sur les beautés de Wangen, entre promenades, points de vue, jardins ouverts et exposition photos.",
+  "body": [
+    "## Rendez-vous aux jardins",
+    "",
+    "Le 7 juin 2026, l’association Nous voulons maintenir et valoriser organise à Wangen une journée dédiée aux jardins et aux beautés du village.",
+    "",
+    "Au gré de circuits proposés à la promenade autour et dans le village médiéval, les visiteurs pourront découvrir de multiples points de vue sur les jardins de Wangen et visiter les jardins ouverts pour l’occasion.",
+    "",
+    "Différents médias ayant trait à la vue seront également proposés, dont une exposition photos.",
+    "",
+    "L’accueil se fera au Niedertor, près de la Mairie, au 44 Rue des Vignerons à Wangen.",
+    "",
+    "Horaires indicatifs : 9h-17h."
+  ]
+}
   ]
 }
