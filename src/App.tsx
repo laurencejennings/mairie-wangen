@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import {
   CalendarCheck,
   CalendarDays,
-  Clock3,
   DoorOpen,
   Mail,
   MapPin,
