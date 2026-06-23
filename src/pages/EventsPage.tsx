@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Clock3,
   MapPin,
 } from 'lucide-react';
 
@@ -66,11 +67,9 @@ const associationAccents: Accent[] = [
   { main: COLORS.pink, soft: COLORS.pinkSoft },
 ];
 
-const agendaDateFormatter = new Intl.DateTimeFormat('fr-FR', {
+const eventDayFormatter = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'short',
   day: 'numeric',
-  month: 'long',
-  year: 'numeric',
 });
 
 const monthFormatter = new Intl.DateTimeFormat('fr-FR', {
@@ -96,14 +95,14 @@ function getEventSortDate(date: string, time?: string | null) {
   return new Date(`${date}T${timePart}`);
 }
 
-function getAgendaDateLabel(date: string) {
+function getEventDayLabel(date: string) {
   const parsed = new Date(`${date}T00:00:00`);
 
   if (Number.isNaN(parsed.getTime())) {
     return date;
   }
 
-  return agendaDateFormatter.format(parsed);
+  return capitalizeFirst(eventDayFormatter.format(parsed));
 }
 
 function getMonthData(dateIso: string) {
@@ -144,7 +143,7 @@ function formatEventTime(event: AssociationEvent) {
   }
 
   if (event.time && event.endTime) {
-    return `${formatFrenchTime(event.time)}-${formatFrenchTime(
+    return `${formatFrenchTime(event.time)}–${formatFrenchTime(
       event.endTime,
     )}`;
   }
@@ -177,11 +176,6 @@ function buildAgendaPages(events: AgendaEvent[]) {
     (item) => item.sortDate.getTime() >= now.getTime(),
   );
 
-  /*
-   * Past events are sorted from oldest to newest.
-   * Therefore, the last past page contains the most recent archives and sits
-   * immediately before the first future page.
-   */
   const pastPages: AgendaPage[] = chunkEvents(
     pastEvents,
     EVENTS_PER_PAGE,
@@ -198,11 +192,6 @@ function buildAgendaPages(events: AgendaEvent[]) {
     events: pageEvents,
   }));
 
-  /*
-   * Keep one empty future page when no future events exist.
-   * This makes the agenda open on the future section while allowing the user
-   * to press "Précédent" to view archived events.
-   */
   if (futurePages.length === 0) {
     futurePages.push({
       kind: 'future',
@@ -249,7 +238,7 @@ function AppShell({ children }: { children: ReactNode }) {
           'radial-gradient(circle at top left, #EAF2FF 0, transparent 32%), radial-gradient(circle at top right, #FFF4CF 0, transparent 28%), linear-gradient(180deg, #F8FBFF 0%, #FFFFFF 42%, #FFFDF7 100%)',
       }}
     >
-      <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+      <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         {children}
       </div>
     </main>
@@ -270,7 +259,7 @@ function ShellCard({
   return (
     <section
       id={id}
-      className={`rounded-[28px] border shadow-[0_14px_40px_rgba(20,33,61,0.08)] ${className}`}
+      className={`rounded-[22px] border shadow-[0_12px_32px_rgba(20,33,61,0.07)] sm:rounded-[28px] ${className}`}
       style={{
         borderColor: '#E6ECF7',
         background,
@@ -304,7 +293,7 @@ function SectionTitle({
         />
 
         <span
-          className="text-[11px] font-bold uppercase tracking-[0.24em]"
+          className="text-[10px] font-bold uppercase tracking-[0.22em] sm:text-[11px]"
           style={{ color: accent.main }}
         >
           {eyebrow}
@@ -316,7 +305,7 @@ function SectionTitle({
       </h1>
 
       {description ? (
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:mt-3 sm:text-base">
           {description}
         </p>
       ) : null}
@@ -342,20 +331,20 @@ function AssociationFilter({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition hover:-translate-y-0.5"
+      className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-2 text-xs font-bold transition hover:-translate-y-0.5 sm:px-4 sm:text-sm"
       style={{
         borderColor: selected ? accent.main : COLORS.line,
         backgroundColor: selected ? accent.main : COLORS.white,
         color: selected ? COLORS.white : COLORS.ink,
         boxShadow: selected
-          ? `0 8px 18px ${accent.main}30`
-          : '0 5px 14px rgba(20,33,61,0.04)',
+          ? `0 7px 16px ${accent.main}28`
+          : '0 4px 12px rgba(20,33,61,0.04)',
       }}
     >
       {association.name}
 
       <span
-        className="inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-xs"
+        className="inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] sm:min-w-6 sm:px-2 sm:text-xs"
         style={{
           backgroundColor: selected ? '#FFFFFF30' : accent.soft,
           color: selected ? COLORS.white : accent.main,
@@ -387,9 +376,9 @@ function MonthDivider({
       };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2.5">
       <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl sm:h-9 sm:w-9"
         style={{
           backgroundColor: accent.soft,
           color: accent.main,
@@ -399,14 +388,14 @@ function MonthDivider({
       </div>
 
       <h3
-        className="shrink-0 text-base font-extrabold tracking-tight sm:text-lg"
+        className="shrink-0 text-sm font-extrabold tracking-tight sm:text-lg"
         style={{ color: accent.main }}
       >
         {label}
       </h3>
 
       <div
-        className="h-px min-w-6 flex-1"
+        className="h-px min-w-4 flex-1"
         style={{ backgroundColor: accent.line }}
       />
     </div>
@@ -424,91 +413,91 @@ function EventCard({
 }) {
   const { association, event } = item;
 
+  const activeColor = isPast ? '#64748B' : accent.main;
+  const activeSoft = isPast ? '#F1F5F9' : accent.soft;
+
   return (
     <a
       href={`/${association.slug}/events/${event.slug}`}
-      className={`block rounded-[24px] border bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(20,33,61,0.10)] ${
+      className={`block rounded-[18px] border bg-white p-4 shadow-[0_4px_14px_rgba(20,33,61,0.035)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(20,33,61,0.09)] sm:rounded-[22px] sm:p-5 ${
         isPast ? 'opacity-80 hover:opacity-100' : ''
       }`}
       style={{ borderColor: '#E7EDF8' }}
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-start gap-4 sm:items-center">
-          <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white"
+      <div className="flex items-start justify-between gap-3">
+        <div
+          className="inline-flex min-w-0 items-center gap-2 text-[10px] font-bold uppercase tracking-[0.17em] sm:text-[11px] sm:tracking-[0.2em]"
+          style={{ color: activeColor }}
+        >
+          <span
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl sm:h-9 sm:w-9"
             style={{
-              backgroundColor: isPast ? '#94A3B8' : accent.main,
+              backgroundColor: activeSoft,
+              color: activeColor,
             }}
           >
-            <CalendarDays className="h-6 w-6" />
-          </div>
+            <CalendarDays className="h-4 w-4" />
+          </span>
 
-          <div className="min-w-0">
-            <div
-              className="text-[11px] font-bold uppercase tracking-[0.22em]"
-              style={{
-                color: isPast ? COLORS.muted : accent.main,
-              }}
-            >
-              {getAgendaDateLabel(event.date)}
-            </div>
-
-            <h2 className="mt-1 text-base font-bold text-slate-950 sm:text-lg">
-              {event.title}
-            </h2>
-
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span
-                className="inline-flex rounded-full px-3 py-1 text-xs font-bold"
-                style={{
-                  backgroundColor: isPast ? '#F1F5F9' : accent.soft,
-                  color: isPast ? '#64748B' : accent.main,
-                }}
-              >
-                {association.name}
-              </span>
-
-              <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
-                <MapPin
-                  className="h-3.5 w-3.5 shrink-0"
-                  style={{
-                    color: isPast ? '#64748B' : accent.main,
-                  }}
-                />
-                {event.location}
-              </span>
-
-              {isPast ? (
-                <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
-                  Événement passé
-                </span>
-              ) : null}
-            </div>
-
-            {event.description ? (
-              <p className="mt-3 line-clamp-2 max-w-2xl text-sm leading-6 text-slate-600">
-                {event.description}
-              </p>
-            ) : null}
-          </div>
+          <span className="truncate">
+            {getEventDayLabel(event.date)}
+          </span>
         </div>
 
         <div
-          className="shrink-0 rounded-2xl px-4 py-3 text-center sm:min-w-32"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-bold sm:px-3 sm:text-sm"
           style={{
-            backgroundColor: isPast ? '#F1F5F9' : accent.soft,
-            color: isPast ? '#64748B' : accent.main,
+            backgroundColor: activeSoft,
+            color: activeColor,
           }}
         >
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em]">
-            Heure
-          </div>
-
-          <div className="mt-1 whitespace-nowrap text-base font-bold">
+          <Clock3 className="h-3.5 w-3.5" />
+          <span className="whitespace-nowrap">
             {formatEventTime(event)}
-          </div>
+          </span>
         </div>
       </div>
+
+      <h2 className="mt-3 text-base font-extrabold leading-snug text-slate-950 sm:text-lg">
+        {event.title}
+      </h2>
+
+      <div className="mt-3 flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <span
+          className="inline-flex max-w-full rounded-full px-3 py-1 text-xs font-bold"
+          style={{
+            backgroundColor: activeSoft,
+            color: activeColor,
+          }}
+        >
+          <span className="truncate">
+            {association.name}
+          </span>
+        </span>
+
+        <span className="inline-flex min-w-0 items-center gap-1.5 text-xs leading-5 text-slate-600">
+          <MapPin
+            className="h-3.5 w-3.5 shrink-0"
+            style={{ color: activeColor }}
+          />
+
+          <span className="line-clamp-1">
+            {event.location}
+          </span>
+        </span>
+
+        {isPast ? (
+          <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
+            Événement passé
+          </span>
+        ) : null}
+      </div>
+
+      {event.description ? (
+        <p className="mt-3 hidden max-w-3xl text-sm leading-6 text-slate-600 sm:line-clamp-2 sm:block">
+          {event.description}
+        </p>
+      ) : null}
     </a>
   );
 }
@@ -520,20 +509,20 @@ function EmptyAgenda({
 }) {
   return (
     <div
-      className="rounded-[24px] border border-dashed p-8 text-center"
+      className="rounded-[20px] border border-dashed px-5 py-8 text-center sm:rounded-[24px] sm:p-8"
       style={{
         borderColor: '#8B5CF640',
         backgroundColor: '#FCFAFF',
       }}
     >
       <div
-        className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl"
+        className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl sm:h-14 sm:w-14"
         style={{
           backgroundColor: COLORS.purpleSoft,
           color: COLORS.purple,
         }}
       >
-        <CalendarDays className="h-6 w-6" />
+        <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6" />
       </div>
 
       <h2 className="mt-4 text-lg font-bold text-slate-900">
@@ -575,70 +564,102 @@ function Pagination({
   return (
     <nav
       aria-label="Pagination de l’agenda"
-      className="mt-6 flex flex-wrap items-center justify-center gap-2"
+      className="mt-6"
     >
-      <button
-        type="button"
-        onClick={() => onChange(page - 1)}
-        disabled={page === 1}
-        className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold text-slate-700 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
-        style={{ borderColor: COLORS.line }}
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Précédent
-      </button>
+      <div className="flex items-center justify-between gap-2 sm:hidden">
+        <button
+          type="button"
+          onClick={() => onChange(page - 1)}
+          disabled={page === 1}
+          aria-label="Page précédente"
+          className="inline-flex h-10 items-center gap-1 rounded-xl border bg-white px-3 text-xs font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+          style={{ borderColor: COLORS.line }}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Précédent
+        </button>
 
-      {visiblePages.map((pageNumber, index) => {
-        const previousPage = visiblePages[index - 1];
+        <span className="text-xs font-semibold text-slate-500">
+          Page {page} sur {pageCount}
+        </span>
 
-        const showSeparator =
-          previousPage !== undefined &&
-          pageNumber - previousPage > 1;
+        <button
+          type="button"
+          onClick={() => onChange(page + 1)}
+          disabled={page === pageCount}
+          aria-label="Page suivante"
+          className="inline-flex h-10 items-center gap-1 rounded-xl border bg-white px-3 text-xs font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+          style={{ borderColor: COLORS.line }}
+        >
+          Suivant
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
 
-        return (
-          <span key={pageNumber} className="contents">
-            {showSeparator ? (
-              <span className="px-1 text-slate-400">…</span>
-            ) : null}
+      <div className="hidden flex-wrap items-center justify-center gap-2 sm:flex">
+        <button
+          type="button"
+          onClick={() => onChange(page - 1)}
+          disabled={page === 1}
+          className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold text-slate-700 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+          style={{ borderColor: COLORS.line }}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Précédent
+        </button>
 
-            <button
-              type="button"
-              onClick={() => onChange(pageNumber)}
-              aria-current={
-                pageNumber === page ? 'page' : undefined
-              }
-              className="flex h-11 min-w-11 items-center justify-center rounded-2xl border px-3 text-sm font-bold transition hover:-translate-y-0.5"
-              style={{
-                borderColor:
-                  pageNumber === page
-                    ? COLORS.purple
-                    : COLORS.line,
-                backgroundColor:
-                  pageNumber === page
-                    ? COLORS.purple
-                    : COLORS.white,
-                color:
-                  pageNumber === page
-                    ? COLORS.white
-                    : COLORS.ink,
-              }}
-            >
-              {pageNumber}
-            </button>
-          </span>
-        );
-      })}
+        {visiblePages.map((pageNumber, index) => {
+          const previousPage = visiblePages[index - 1];
 
-      <button
-        type="button"
-        onClick={() => onChange(page + 1)}
-        disabled={page === pageCount}
-        className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold text-slate-700 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
-        style={{ borderColor: COLORS.line }}
-      >
-        Suivant
-        <ChevronRight className="h-4 w-4" />
-      </button>
+          const showSeparator =
+            previousPage !== undefined &&
+            pageNumber - previousPage > 1;
+
+          return (
+            <span key={pageNumber} className="contents">
+              {showSeparator ? (
+                <span className="px-1 text-slate-400">…</span>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => onChange(pageNumber)}
+                aria-current={
+                  pageNumber === page ? 'page' : undefined
+                }
+                className="flex h-11 min-w-11 items-center justify-center rounded-2xl border px-3 text-sm font-bold transition hover:-translate-y-0.5"
+                style={{
+                  borderColor:
+                    pageNumber === page
+                      ? COLORS.purple
+                      : COLORS.line,
+                  backgroundColor:
+                    pageNumber === page
+                      ? COLORS.purple
+                      : COLORS.white,
+                  color:
+                    pageNumber === page
+                      ? COLORS.white
+                      : COLORS.ink,
+                }}
+              >
+                {pageNumber}
+              </button>
+            </span>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() => onChange(page + 1)}
+          disabled={page === pageCount}
+          className="inline-flex h-11 items-center gap-2 rounded-2xl border bg-white px-4 text-sm font-bold text-slate-700 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+          style={{ borderColor: COLORS.line }}
+        >
+          Suivant
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
     </nav>
   );
 }
@@ -762,10 +783,10 @@ export default function EventsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-5">
+      <div className="space-y-4 sm:space-y-5">
         <a
           href="/"
-          className="inline-flex items-center gap-2 rounded-2xl border bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-[0_8px_20px_rgba(20,33,61,0.04)] transition hover:-translate-y-0.5"
+          className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-[0_6px_16px_rgba(20,33,61,0.04)] transition hover:-translate-y-0.5 sm:rounded-2xl sm:px-4 sm:py-2.5"
           style={{ borderColor: COLORS.line }}
         >
           <ArrowLeft className="h-4 w-4" />
@@ -773,7 +794,7 @@ export default function EventsPage() {
         </a>
 
         <ShellCard
-          className="p-5 sm:p-7"
+          className="p-4 sm:p-7"
           background="linear-gradient(135deg, #FFFFFF 0%, #F7FBFF 48%, #F3ECFF 100%)"
         >
           <SectionTitle
@@ -786,7 +807,7 @@ export default function EventsPage() {
             }}
           />
 
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="-mx-1 mt-5 flex gap-2 overflow-x-auto px-1 pb-2 sm:mx-0 sm:mt-6 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
             <button
               type="button"
               onClick={() =>
@@ -795,7 +816,7 @@ export default function EventsPage() {
               aria-pressed={
                 selectedAssociation === 'all'
               }
-              className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition hover:-translate-y-0.5"
+              className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-2 text-xs font-bold transition hover:-translate-y-0.5 sm:px-4 sm:text-sm"
               style={{
                 borderColor:
                   selectedAssociation === 'all'
@@ -811,10 +832,10 @@ export default function EventsPage() {
                     : COLORS.ink,
               }}
             >
-              Tous les événements
+              Tous
 
               <span
-                className="inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-xs"
+                className="inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] sm:min-w-6 sm:px-2 sm:text-xs"
                 style={{
                   backgroundColor:
                     selectedAssociation === 'all'
@@ -859,17 +880,17 @@ export default function EventsPage() {
 
         <ShellCard
           id="agenda-events"
-          className="scroll-mt-4 p-5 sm:p-6"
+          className="scroll-mt-3 p-4 sm:scroll-mt-5 sm:p-6"
           background={
             isViewingPast
               ? 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)'
               : 'linear-gradient(180deg, #FBF7FF 0%, #FFFFFF 100%)'
           }
         >
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
+          <div className="mb-5">
+            <div className="flex items-center justify-between gap-3">
               <div
-                className="text-[11px] font-bold uppercase tracking-[0.24em]"
+                className="text-[10px] font-bold uppercase tracking-[0.22em] sm:text-[11px] sm:tracking-[0.24em]"
                 style={{
                   color: isViewingPast
                     ? COLORS.muted
@@ -879,50 +900,44 @@ export default function EventsPage() {
                 {isViewingPast ? 'Archives' : 'À venir'}
               </div>
 
-              <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
-                {isViewingPast
-                  ? selectedAssociationName
-                    ? `Événements passés — ${selectedAssociationName}`
-                    : 'Événements passés'
-                  : selectedAssociationName
-                    ? `Prochains événements — ${selectedAssociationName}`
-                    : 'Prochains événements'}
-              </h2>
+              <div
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold sm:rounded-2xl sm:px-4 sm:py-2 sm:text-sm"
+                style={{
+                  backgroundColor: isViewingPast
+                    ? '#F1F5F9'
+                    : COLORS.purpleSoft,
+                  color: isViewingPast
+                    ? '#64748B'
+                    : COLORS.purple,
+                }}
+              >
+                <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
 
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                 {isViewingPast
-                  ? 'Vous consultez les événements archivés. Avancez dans la pagination pour revenir aux événements à venir.'
-                  : 'Les prochains événements sont classés par date et regroupés par mois.'}
-              </p>
+                  ? pastCount
+                  : futureCount}
+              </div>
             </div>
 
-            <div
-              className="inline-flex w-fit items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold"
-              style={{
-                backgroundColor: isViewingPast
-                  ? '#F1F5F9'
-                  : COLORS.purpleSoft,
-                color: isViewingPast
-                  ? '#64748B'
-                  : COLORS.purple,
-              }}
-            >
-              <CalendarDays className="h-4 w-4" />
-
+            <h2 className="mt-2 text-xl font-extrabold tracking-tight text-slate-950 sm:text-2xl">
               {isViewingPast
-                ? pastCount
-                : futureCount}{' '}
-              événement
-              {(isViewingPast
-                ? pastCount
-                : futureCount) > 1
-                ? 's'
-                : ''}
-            </div>
+                ? selectedAssociationName
+                  ? `Événements passés — ${selectedAssociationName}`
+                  : 'Événements passés'
+                : selectedAssociationName
+                  ? `Prochains événements — ${selectedAssociationName}`
+                  : 'Prochains événements'}
+            </h2>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              {isViewingPast
+                ? 'Avancez dans la pagination pour revenir aux événements à venir.'
+                : 'Les événements sont classés par date et regroupés par mois.'}
+            </p>
           </div>
 
           {monthGroups.length > 0 ? (
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
               {monthGroups.map((group) => (
                 <section key={group.key}>
                   <MonthDivider
@@ -930,7 +945,7 @@ export default function EventsPage() {
                     isPast={isViewingPast}
                   />
 
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-3 space-y-3 sm:mt-4">
                     {group.events.map((item) => {
                       const accent =
                         accentByAssociation.get(
@@ -957,16 +972,14 @@ export default function EventsPage() {
           )}
 
           {pastCount > 0 && !isViewingPast ? (
-            <p className="mt-6 text-center text-xs leading-5 text-slate-500">
-              Les pages précédentes contiennent les
-              événements passés.
+            <p className="mt-5 text-center text-xs leading-5 text-slate-500">
+              Les pages précédentes contiennent les événements passés.
             </p>
           ) : null}
 
           {isViewingPast && futureCount > 0 ? (
-            <p className="mt-6 text-center text-xs leading-5 text-slate-500">
-              Utilisez « Suivant » pour revenir aux
-              événements à venir.
+            <p className="mt-5 text-center text-xs leading-5 text-slate-500">
+              Utilisez « Suivant » pour revenir aux événements à venir.
             </p>
           ) : null}
 
