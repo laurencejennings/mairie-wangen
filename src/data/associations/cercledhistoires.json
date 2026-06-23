@@ -4,5 +4,96 @@
   "subtitle": "Mémoire locale et transmission",
   "description": "Le Cercle d'Histoires collecte, raconte et partage les mémoires du territoire à travers des rencontres publiques.",
   "events": [
+    {
+      "id": "cdh-visite-historique-fete-fontaine-2026-07-05",
+      "slug": "visite-historique-fete-fontaine-2026-07-05",
+      "title": "Visite historique du village",
+      "date": "2026-07-05",
+      "time": "14:30",
+      "endTime": null,
+      "timeLabel": "à 14h30",
+      "location": "Wangen",
+      "description": "Une visite historique de Wangen proposée dans le cadre de la 199e Fête de la Fontaine.",
+      "body": [
+        "## Visite historique du village",
+        "",
+        "Le dimanche 5 juillet 2026, une visite historique du village est proposée dans le cadre de la 199e Fête de la Fontaine.",
+        "",
+        "",
+        "Cette visite permet de découvrir l'histoire, le patrimoine et les particularités du village."
+      ]
+    },
+    {
+      "id": "cdh-visite-nocturne-wangen-2026-07-15",
+      "slug": "visite-nocturne-wangen-2026-07-15",
+      "title": "Visite nocturne du village",
+      "date": "2026-07-15",
+      "time": "20:00",
+      "endTime": null,
+      "timeLabel": "à 20h",
+      "location": "Rendez-vous devant la Mairie, Wangen",
+      "description": "Une visite nocturne de Wangen pour découvrir l'histoire et le patrimoine du village.",
+      "body": [
+        "## Visite nocturne du village",
+        "",
+        "Le mercredi 15 juillet 2026, le Cercle d'Histoire de Wangen propose une visite nocturne du village.",
+        "",
+        "Le rendez-vous est fixé à 20h devant la Mairie de Wangen."
+      ]
+    },
+    {
+      "id": "cdh-visite-nocturne-wangen-2026-07-29",
+      "slug": "visite-nocturne-wangen-2026-07-29",
+      "title": "Visite nocturne du village",
+      "date": "2026-07-29",
+      "time": "20:00",
+      "endTime": null,
+      "timeLabel": "à 20h",
+      "location": "Rendez-vous devant la Mairie, Wangen",
+      "description": "Une visite nocturne de Wangen pour découvrir l'histoire et le patrimoine du village.",
+      "body": [
+        "## Visite nocturne du village",
+        "",
+        "Le mercredi 29 juillet 2026, le Cercle d'Histoire de Wangen propose une visite nocturne du village.",
+        "",
+        "Le rendez-vous est fixé à 20h devant la Mairie de Wangen."
+      ]
+    },
+    {
+      "id": "cdh-visite-nocturne-wangen-2026-08-05",
+      "slug": "visite-nocturne-wangen-2026-08-05",
+      "title": "Visite nocturne du village",
+      "date": "2026-08-05",
+      "time": "20:00",
+      "endTime": null,
+      "timeLabel": "à 20h",
+      "location": "Rendez-vous devant la Mairie, Wangen",
+      "description": "Une visite nocturne de Wangen pour découvrir l'histoire et le patrimoine du village.",
+      "body": [
+        "## Visite nocturne du village",
+        "",
+        "Le mercredi 5 août 2026, le Cercle d'Histoire de Wangen propose une visite nocturne du village.",
+        "",
+        "Le rendez-vous est fixé à 20h devant la Mairie de Wangen."
+      ]
+    },
+    {
+      "id": "cdh-visite-nocturne-wangen-2026-08-19",
+      "slug": "visite-nocturne-wangen-2026-08-19",
+      "title": "Visite nocturne du village",
+      "date": "2026-08-19",
+      "time": "20:00",
+      "endTime": null,
+      "timeLabel": "à 20h",
+      "location": "Rendez-vous devant la Mairie, Wangen",
+      "description": "Une visite nocturne de Wangen pour découvrir l'histoire et le patrimoine du village.",
+      "body": [
+        "## Visite nocturne du village",
+        "",
+        "Le mercredi 19 août 2026, le Cercle d'Histoire de Wangen propose une visite nocturne du village.",
+        "",
+        "Le rendez-vous est fixé à 20h devant la Mairie de Wangen."
+      ]
+    }
   ]
 }

@@ -387,31 +387,31 @@ function EmptyAgenda() {
 
 
 const logoSrc = '/images/blason.webp';
-const heroImageSrc = '/images/homeimage.png';
+// const heroImageSrc = '/images/homeimage.png';
 
-function HeroArtwork() {
-  return (
-    <div className="flex w-full shrink-0 items-center justify-center lg:w-[42%]">
-      <div className="w-full max-w-[520px] rounded-[34px] bg-gradient-to-br from-white/80 via-[#EAF2FF]/75 to-[#FFF4CF]/80 p-3 shadow-[0_18px_44px_rgba(20,33,61,0.10)]">
-        <div
-          className="rounded-[28px] bg-[#F7FBFF] p-2"
-          style={{
-            WebkitMaskImage:
-              'radial-gradient(ellipse 96% 88% at 56% 46%, #000 0%, #000 56%, rgba(0,0,0,0.78) 72%, rgba(0,0,0,0.24) 90%, transparent 100%)',
-            maskImage:
-              'radial-gradient(ellipse 96% 88% at 56% 46%, #000 0%, #000 56%, rgba(0,0,0,0.78) 72%, rgba(0,0,0,0.24) 90%, transparent 100%)',
-          }}
-        >
-          <img
-            src={heroImageSrc}
-            alt="Illustration de la porte fortifiée de Wangen"
-            className="rounded-[17px] block h-auto w-full object-contain"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
+// function HeroArtwork() {
+//   return (
+//     <div className="flex w-full shrink-0 items-center justify-center lg:w-[42%]">
+//       <div className="w-full max-w-[520px] rounded-[34px] bg-gradient-to-br from-white/80 via-[#EAF2FF]/75 to-[#FFF4CF]/80 p-3 shadow-[0_18px_44px_rgba(20,33,61,0.10)]">
+//         <div
+//           className="rounded-[28px] bg-[#F7FBFF] p-2"
+//           style={{
+//             WebkitMaskImage:
+//               'radial-gradient(ellipse 96% 88% at 56% 46%, #000 0%, #000 56%, rgba(0,0,0,0.78) 72%, rgba(0,0,0,0.24) 90%, transparent 100%)',
+//             maskImage:
+//               'radial-gradient(ellipse 96% 88% at 56% 46%, #000 0%, #000 56%, rgba(0,0,0,0.78) 72%, rgba(0,0,0,0.24) 90%, transparent 100%)',
+//           }}
+//         >
+//           <img
+//             src={heroImageSrc}
+//             alt="Illustration de la porte fortifiée de Wangen"
+//             className="rounded-[17px] block h-auto w-full object-contain"
+//           />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 export default function MairieWangenHome() {
   const upcomingEvents = getUpcomingAssociationEvents(5);
@@ -458,7 +458,7 @@ export default function MairieWangenHome() {
               </div>
             </div>
 
-            <HeroArtwork />
+            {/* <HeroArtwork /> */}
           </div>
         </ShellCard>
 

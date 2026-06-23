@@ -7,6 +7,7 @@ import {
 } from './data/associations';
 import AssociationPage from './pages/AssociationPage';
 import EventPage from './pages/EventPage';
+import EventsPage from './pages/EventsPage';
 
 function normalizePathname(pathname: string) {
   if (!pathname) {
@@ -21,14 +22,24 @@ function normalizePathname(pathname: string) {
 }
 
 function NotFoundPage() {
-  const knownPaths = [...listAssociationPaths(), ...listAssociationEventPaths()];
+  const knownPaths = [
+    '/events',
+    ...listAssociationPaths(),
+    ...listAssociationEventPaths(),
+  ];
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">404</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Page introuvable</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
+            404
+          </p>
+
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+            Page introuvable
+          </h1>
+
           <p className="mt-3 text-sm leading-6 text-slate-600">
             Cette page n'existe pas. Voici les pages disponibles.
           </p>
@@ -39,6 +50,7 @@ function NotFoundPage() {
                 /
               </a>
             </li>
+
             {knownPaths.map((path) => (
               <li key={path}>
                 <a href={path} className="font-medium hover:underline">
@@ -60,6 +72,10 @@ export default function SiteRouter() {
     return <MairieWangenHome />;
   }
 
+  if (pathname === '/events') {
+    return <EventsPage />;
+  }
+
   const segments = pathname.split('/').filter(Boolean);
 
   if (segments.length === 1) {
@@ -71,10 +87,18 @@ export default function SiteRouter() {
   }
 
   if (segments.length === 3 && segments[1] === 'events') {
-    const match = getAssociationEventBySlugs(segments[0], segments[2]);
+    const match = getAssociationEventBySlugs(
+      segments[0],
+      segments[2],
+    );
 
     if (match) {
-      return <EventPage association={match.association} event={match.event} />;
+      return (
+        <EventPage
+          association={match.association}
+          event={match.event}
+        />
+      );
     }
   }
 
