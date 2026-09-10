@@ -33,6 +33,7 @@ export type AssociationEvent = {
   main?: EventPhoto;
   carousel?: EventPhoto[];
   gallery?: EventPhoto[];
+  published?: boolean;
 };
 
 export type AssociationData = {
