@@ -1,0 +1,43 @@
+/**
+ * Development Wrangler config.
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "wangen-dev",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-01-28",
+	"assets": {
+		"not_found_handling": "single-page-application"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"binding": "CONTENT_DB",
+			"database_name": "mairie-db",
+			"migrations_dir": "migrations"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "CONTENT_CACHE",
+			"id": "472888b5667a43f3997990788113dc5c"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "EVENT_IMAGES",
+			"bucket_name": "mairie-event-images-dev"
+		}
+	],
+	"analytics_engine_datasets": [
+		{
+			"binding": "PAGE_ANALYTICS",
+			"dataset": "wangen_page_visits_dev"
+		}
+	],
+	"vars": {
+		"PAGE_ANALYTICS_DATASET": "wangen_page_visits_dev"
+	}
+}

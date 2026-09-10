@@ -9,7 +9,6 @@ import {
   MapPin,
 } from 'lucide-react';
 
-import { listAssociations } from '../data/associations';
 import type {
   AssociationData,
   AssociationEvent,
@@ -664,9 +663,7 @@ function Pagination({
   );
 }
 
-export default function EventsPage() {
-  const associations = useMemo(() => listAssociations(), []);
-
+export default function EventsPage({ associations }: { associations: AssociationData[] }) {
   const [selectedAssociation, setSelectedAssociation] =
     useState<string>('all');
 
@@ -735,8 +732,10 @@ export default function EventsPage() {
     pages[initialPage - 1] ??
     pages[0];
 
-  const paginatedEvents =
-    currentAgendaPage?.events ?? [];
+  const paginatedEvents = useMemo(
+    () => currentAgendaPage?.events ?? [],
+    [currentAgendaPage],
+  );
 
   const isViewingPast =
     currentAgendaPage?.kind === 'past';

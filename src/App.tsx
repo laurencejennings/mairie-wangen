@@ -9,7 +9,7 @@ import {
   PhoneCall,
   type LucideIcon,
 } from 'lucide-react';
-import { listAssociations } from './data/associations';
+import type { AssociationData } from './lib/associationSchema';
 
 const COLORS = {
   blue: '#1457F2',
@@ -111,10 +111,10 @@ function getAgendaDateLabel(date: string) {
   return agendaDateFormatter.format(parsed);
 }
 
-function getUpcomingAssociationEvents(limit: number): UpcomingEvent[] {
+function getUpcomingAssociationEvents(associations: AssociationData[], limit: number): UpcomingEvent[] {
   const now = new Date();
 
-  return listAssociations()
+  return associations
     .flatMap((association) =>
       association.events.map((event) => {
         const sortDate = getEventSortDate(event.date, event.time);
@@ -413,8 +413,8 @@ const logoSrc = '/images/blason.webp';
 //   );
 // }
 
-export default function MairieWangenHome() {
-  const upcomingEvents = getUpcomingAssociationEvents(5);
+export default function MairieWangenHome({ associations }: { associations: AssociationData[] }) {
+  const upcomingEvents = getUpcomingAssociationEvents(associations, 5);
   const hasEvents = upcomingEvents.length > 0;
 
   return (

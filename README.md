@@ -1,11 +1,12 @@
 # Wangen Site (Vite + React + TypeScript)
 
-Static-first municipal website with:
+Municipal website with:
 - home page (`/`)
 - association pages (`/:associationSlug`)
 - event pages (`/:associationSlug/events/:eventSlug`)
+- event admin (`/admin/events`)
 
-All association and event content is managed in JSON files under `src/data/associations`.
+Events are served from D1 through `/api/events`, cached in KV, and can reference optimized images stored in R2. The JSON files under `src/data/associations` remain as a local/build fallback and seed source.
 
 ## Development
 
@@ -13,6 +14,8 @@ All association and event content is managed in JSON files under `src/data/assoc
 npm install
 npm run dev
 ```
+
+`npm run dev` uses `wrangler.dev.jsonc` through `CLOUDFLARE_VITE_WRANGLER_CONFIG_PATH`, so local development is wired to the dev D1 database name `mairie-db`.
 
 Useful checks:
 
@@ -26,8 +29,108 @@ npm run build
 - `/` : home page with "Agenda a venir" (next 5 upcoming events across all associations)
 - `/:associationSlug` : association page
 - `/:associationSlug/events/:eventSlug` : event detail page (template)
+- `/admin/events` : protected event editor
+- `/admin/metrics` : protected page visit dashboard
 
-## Content Source (JSON)
+Admin API routes live under `/api/admin/...`. Keep Cloudflare Zero Trust policies covering `/admin*` and `/api/admin*`.
+
+## Cloudflare Storage
+
+Required bindings:
+
+- D1 database binding: `CONTENT_DB`
+- KV namespace binding: `CONTENT_CACHE`
+- R2 bucket binding: `EVENT_IMAGES`
+- Workers Analytics Engine binding: `PAGE_ANALYTICS`
+
+`wrangler.jsonc` is configured for production:
+
+```jsonc
+"d1_databases": [
+  {
+    "binding": "CONTENT_DB",
+    "database_name": "mairie-db-prod",
+    "migrations_dir": "migrations"
+  }
+],
+"kv_namespaces": [
+  {
+    "binding": "CONTENT_CACHE",
+    "id": "93a138938f6c41c9845a036096dce85e"
+  }
+],
+"r2_buckets": [
+  {
+    "binding": "EVENT_IMAGES",
+    "bucket_name": "mairie-event-images"
+  }
+],
+"analytics_engine_datasets": [
+  {
+    "binding": "PAGE_ANALYTICS",
+    "dataset": "wangen_page_visits"
+  }
+]
+```
+
+`wrangler.dev.jsonc` is configured for local/dev work with D1 database `mairie-db`, KV binding `CONTENT_CACHE` using namespace `472888b5667a43f3997990788113dc5c`, R2 bucket `mairie-event-images-dev`, and Analytics Engine dataset `wangen_page_visits_dev`.
+
+The D1 schema is defined in `src/db/schema.ts`. Generate schema migrations with Drizzle:
+
+```bash
+npm run db:generate
+```
+
+The initial migration also includes seed SQL generated from the current JSON files and event media manifest:
+
+```bash
+npm run db:seed:events
+```
+
+Apply the event migration:
+
+```bash
+npx wrangler d1 migrations apply mairie-db --local --config wrangler.dev.jsonc
+npx wrangler d1 migrations apply mairie-db-prod --remote
+```
+
+Upload existing optimized event images to R2 using the same keys stored in `event_media`, for example:
+
+```bash
+npx wrangler r2 object put mairie-event-images/events/commune/corridas-de-wangen-2026-06-06/main.jpg --file public/events/commune/corridas-de-wangen-2026-06-06/main.jpg
+```
+
+Or upload all existing event images:
+
+```bash
+npm run upload:event-images -- --dry-run
+npm run upload:event-images
+
+npm run upload:event-images:dev -- --dry-run
+npm run upload:event-images:dev
+```
+
+The script scans `public/events` and uploads each image with the same R2 object key, for example `public/events/commune/example/main.jpg` becomes `events/commune/example/main.jpg`.
+
+Public event JSON is cached in KV. Admin writes and image uploads invalidate the `content:events:v1` KV entry; the next public request rebuilds it from D1.
+
+## Page Visit Metrics
+
+Public page views are sent from the browser to `/api/analytics/page-view`. Admin pages and API paths are excluded. The Worker writes privacy-preserving aggregate events to Workers Analytics Engine without cookies or visitor identifiers.
+
+The admin dashboard at `/admin/metrics` reads aggregated metrics from Cloudflare's Analytics Engine SQL API. Configure the Cloudflare account ID as an environment variable and store the read token as a secret:
+
+```bash
+npx wrangler secret put ANALYTICS_READ_TOKEN
+```
+
+The token needs Cloudflare Account Analytics Read permission.
+
+## Content Source
+
+In production, use `/admin/events` to create and edit events. The editor writes to D1 and can upload already-optimized banner/main images to R2.
+
+### JSON Fallback
 
 Association files:
 - `src/data/associations/notrevillagemonvillage.json`

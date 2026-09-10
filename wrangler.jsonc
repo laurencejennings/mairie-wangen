@@ -12,6 +12,34 @@
 	},
 	"observability": {
 		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"binding": "CONTENT_DB",
+			"database_name": "mairie-db-prod",
+			"migrations_dir": "migrations"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "CONTENT_CACHE",
+			"id": "93a138938f6c41c9845a036096dce85e"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "EVENT_IMAGES",
+			"bucket_name": "mairie-event-images"
+		}
+	],
+	"analytics_engine_datasets": [
+		{
+			"binding": "PAGE_ANALYTICS",
+			"dataset": "wangen_page_visits"
+		}
+	],
+	"vars": {
+		"PAGE_ANALYTICS_DATASET": "wangen_page_visits"
 	}
 	/**
 	 * Smart Placement

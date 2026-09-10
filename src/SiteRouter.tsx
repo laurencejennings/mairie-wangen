@@ -1,13 +1,18 @@
+import { useEffect, useState } from 'react';
 import MairieWangenHome from './App';
-import {
-  getAssociationBySlug,
-  getAssociationEventBySlugs,
-  listAssociationEventPaths,
-  listAssociationPaths,
-} from './data/associations';
+import { listAssociationEventPaths, listAssociationPaths } from './data/associations';
+import AdminEventsPage from './pages/AdminEventsPage';
+import AdminMetricsPage from './pages/AdminMetricsPage';
 import AssociationPage from './pages/AssociationPage';
 import EventPage from './pages/EventPage';
 import EventsPage from './pages/EventsPage';
+import type { AssociationData } from './lib/associationSchema';
+import {
+  getAssociationBySlug,
+  getAssociationEventBySlugs,
+  loadContent,
+} from './lib/contentApi';
+import { trackPageView } from './lib/pageAnalytics';
 
 function normalizePathname(pathname: string) {
   if (!pathname) {
@@ -67,19 +72,58 @@ function NotFoundPage() {
 
 export default function SiteRouter() {
   const pathname = normalizePathname(window.location.pathname);
+  const [associations, setAssociations] = useState<AssociationData[] | null>(null);
+
+  useEffect(() => {
+    trackPageView(pathname);
+  }, [pathname]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadContent().then((content) => {
+      if (!cancelled) {
+        setAssociations(content.associations);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (pathname === '/admin' || pathname === '/admin/events') {
+    return <AdminEventsPage />;
+  }
+
+  if (pathname === '/admin/metrics') {
+    return <AdminMetricsPage />;
+  }
+
+  if (!associations) {
+    return (
+      <main className="min-h-screen bg-slate-50 text-slate-900">
+        <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-slate-700">Chargement...</p>
+          </section>
+        </div>
+      </main>
+    );
+  }
 
   if (pathname === '/') {
-    return <MairieWangenHome />;
+    return <MairieWangenHome associations={associations} />;
   }
 
   if (pathname === '/events') {
-    return <EventsPage />;
+    return <EventsPage associations={associations} />;
   }
 
   const segments = pathname.split('/').filter(Boolean);
 
   if (segments.length === 1) {
-    const association = getAssociationBySlug(segments[0]);
+    const association = getAssociationBySlug(associations, segments[0]);
 
     if (association) {
       return <AssociationPage association={association} />;
@@ -88,6 +132,7 @@ export default function SiteRouter() {
 
   if (segments.length === 3 && segments[1] === 'events') {
     const match = getAssociationEventBySlugs(
+      associations,
       segments[0],
       segments[2],
     );
