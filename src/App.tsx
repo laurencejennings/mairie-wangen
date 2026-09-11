@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   CalendarCheck,
   CalendarDays,
   DoorOpen,
+  FileText,
   Mail,
   MapPin,
   Phone,
@@ -10,6 +11,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { AssociationData } from './lib/associationSchema';
+import type { BulletinCommunal } from './lib/bulletinSchema';
+import { loadBulletins } from './lib/contentApi';
 
 const COLORS = {
   blue: '#1457F2',
@@ -97,6 +100,11 @@ const agendaDateFormatter = new Intl.DateTimeFormat('fr-FR', {
   month: 'long',
 });
 
+const bulletinDateFormatter = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric',
+  month: 'long',
+});
+
 function getEventSortDate(date: string, time?: string) {
   const timePart = time ? `${time}:00` : '23:59:00';
   return new Date(`${date}T${timePart}`);
@@ -109,6 +117,32 @@ function getAgendaDateLabel(date: string) {
   }
 
   return agendaDateFormatter.format(parsed);
+}
+
+function getRecentBulletin(bulletins: BulletinCommunal[]) {
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+  return bulletins
+    .filter((bulletin) => {
+      if (bulletin.published === false) {
+        return false;
+      }
+
+      const issueDate = new Date(`${bulletin.issueDate}T00:00:00`);
+      return !Number.isNaN(issueDate.getTime()) && issueDate >= oneMonthAgo;
+    })
+    .sort((a, b) => b.issueDate.localeCompare(a.issueDate))[0] ?? null;
+}
+
+function formatBulletinDate(value: string) {
+  const parsed = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return bulletinDateFormatter.format(parsed);
 }
 
 function getUpcomingAssociationEvents(associations: AssociationData[], limit: number): UpcomingEvent[] {
@@ -224,7 +258,7 @@ function TopAction({
   return (
     <a
       href={href}
-      className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-[0_10px_20px_rgba(20,33,61,0.14)] transition hover:-translate-y-0.5"
+      className="flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-[0_10px_20px_rgba(20,33,61,0.14)] transition hover:-translate-y-0.5"
       style={{ backgroundColor: accent.main }}
     >
       {children}
@@ -416,6 +450,21 @@ const logoSrc = '/images/blason.webp';
 export default function MairieWangenHome({ associations }: { associations: AssociationData[] }) {
   const upcomingEvents = getUpcomingAssociationEvents(associations, 5);
   const hasEvents = upcomingEvents.length > 0;
+  const [recentBulletin, setRecentBulletin] = useState<BulletinCommunal | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadBulletins().then((content) => {
+      if (!cancelled) {
+        setRecentBulletin(getRecentBulletin(content.bulletins));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <AppShell>
@@ -455,6 +504,20 @@ export default function MairieWangenHome({ associations }: { associations: Assoc
                   <Mail className="h-4 w-4" aria-hidden="true" />
                   Envoyer un mail
                 </TopAction>
+                <div className="w-full">
+                  <TopAction href="/bulletins" accent={{ main: COLORS.orange, soft: COLORS.orangeSoft }}>
+                    <FileText className="h-4 w-4" aria-hidden="true" />
+                    Bulletin communal
+                  </TopAction>
+                  {recentBulletin ? (
+                    <a
+                      href="/bulletins"
+                      className="mt-2 block rounded-2xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold leading-5 text-orange-800 transition hover:bg-orange-100"
+                    >
+                      Nouveau bulletin publié le {formatBulletinDate(recentBulletin.issueDate)}
+                    </a>
+                  ) : null}
+                </div>
               </div>
             </div>
 

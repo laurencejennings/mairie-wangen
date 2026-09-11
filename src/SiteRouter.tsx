@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import MairieWangenHome from './App';
 import { listAssociationEventPaths, listAssociationPaths } from './data/associations';
+import AdminBulletinsPage from './pages/AdminBulletinsPage';
 import AdminEventsPage from './pages/AdminEventsPage';
 import AdminMetricsPage from './pages/AdminMetricsPage';
 import AssociationPage from './pages/AssociationPage';
+import BulletinsPage from './pages/BulletinsPage';
 import EventPage from './pages/EventPage';
 import EventsPage from './pages/EventsPage';
 import type { AssociationData } from './lib/associationSchema';
@@ -29,6 +31,7 @@ function normalizePathname(pathname: string) {
 function NotFoundPage() {
   const knownPaths = [
     '/events',
+    '/bulletins',
     ...listAssociationPaths(),
     ...listAssociationEventPaths(),
   ];
@@ -100,6 +103,10 @@ export default function SiteRouter() {
     return <AdminMetricsPage />;
   }
 
+  if (pathname === '/admin/bulletins') {
+    return <AdminBulletinsPage />;
+  }
+
   if (!associations) {
     return (
       <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -118,6 +125,10 @@ export default function SiteRouter() {
 
   if (pathname === '/events') {
     return <EventsPage associations={associations} />;
+  }
+
+  if (pathname === '/bulletins') {
+    return <BulletinsPage />;
   }
 
   const segments = pathname.split('/').filter(Boolean);

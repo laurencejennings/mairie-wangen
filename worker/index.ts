@@ -1,5 +1,6 @@
 import { listAssociations as listStaticAssociations } from '../src/data/associations';
 import type { AssociationData, AssociationEvent, EventPhoto } from '../src/lib/associationSchema';
+import type { BulletinCommunal } from '../src/lib/bulletinSchema';
 
 type WangenEnv = Env & {
   CONTENT_DB?: D1Database;
@@ -43,6 +44,20 @@ type MediaRow = {
   caption: string | null;
 };
 
+type BulletinRow = {
+  id: string;
+  title: string;
+  year: number;
+  issue_date: string;
+  description: string | null;
+  pdf_object_key: string;
+  file_name: string | null;
+  file_size: number | null;
+  published: number;
+  created_at: string;
+  updated_at: string;
+};
+
 type MetricsRange = '7d' | '30d' | '90d';
 
 type AnalyticsSqlResponse = {
@@ -51,6 +66,9 @@ type AnalyticsSqlResponse = {
 };
 
 const CONTENT_CACHE_KEY = 'content:events:v1';
+const BULLETINS_CACHE_KEY = 'content:bulletins:v2';
+const BULLETIN_DATA_PATH = '/bulletins/data.json';
+const BULLETIN_FILE_PREFIX = '/bulletins/files/';
 const PAGE_ANALYTICS_DATASET = 'wangen_page_visits';
 const JSON_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -111,6 +129,10 @@ function readBoolean(record: Record<string, unknown>, key: string, fallback: boo
 
 function publicMediaUrl(objectKey: string) {
   return `/api/events/media/${objectKey}`;
+}
+
+function publicBulletinUrl(objectKey: string) {
+  return `${BULLETIN_FILE_PREFIX}${objectKey}`;
 }
 
 function normalizeTrackedPath(value: unknown) {
@@ -613,6 +635,10 @@ async function invalidatePublicEventsCache(env: WangenEnv) {
   await env.CONTENT_CACHE?.delete(CONTENT_CACHE_KEY);
 }
 
+async function invalidatePublicBulletinsCache(env: WangenEnv) {
+  await env.CONTENT_CACHE?.delete(BULLETINS_CACHE_KEY);
+}
+
 async function deleteEvent(eventId: string, env: WangenEnv) {
   const db = requireDb(env);
 
@@ -762,6 +788,261 @@ async function eventImage(request: Request, env: WangenEnv, objectKey: string) {
   return response;
 }
 
+function bulletinFromRow(row: BulletinRow): BulletinCommunal {
+  return {
+    id: row.id,
+    title: row.title,
+    year: row.year,
+    issueDate: row.issue_date,
+    description: row.description ?? undefined,
+    pdfUrl: publicBulletinUrl(row.pdf_object_key),
+    fileName: row.file_name ?? undefined,
+    fileSize: row.file_size ?? undefined,
+    published: row.published === 1,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function loadBulletinsFromD1(env: WangenEnv, includeDrafts = false) {
+  if (!env.CONTENT_DB) {
+    return {
+      bulletins: [],
+      source: 'static',
+    };
+  }
+
+  const result = await env.CONTENT_DB.prepare(
+    `SELECT id, title, year, issue_date, description, pdf_object_key, file_name, file_size,
+      published, created_at, updated_at
+    FROM bulletins
+    WHERE ? = 1 OR published = 1
+    ORDER BY year DESC, issue_date DESC, title`,
+  )
+    .bind(includeDrafts ? 1 : 0)
+    .all<BulletinRow>();
+
+  return {
+    bulletins: result.results.map(bulletinFromRow),
+    source: 'd1',
+  };
+}
+
+async function publicBulletins(env: WangenEnv) {
+  if (env.CONTENT_CACHE) {
+    const cached = await env.CONTENT_CACHE.get(BULLETINS_CACHE_KEY);
+
+    if (cached) {
+      return new Response(cached, { headers: JSON_HEADERS });
+    }
+  }
+
+  const payload = await loadBulletinsFromD1(env, false);
+  const body = JSON.stringify(payload);
+
+  await env.CONTENT_CACHE?.put(BULLETINS_CACHE_KEY, body, {
+    expirationTtl: 300,
+  });
+
+  return new Response(body, { headers: JSON_HEADERS });
+}
+
+async function adminBulletins(env: WangenEnv) {
+  const payload = await loadBulletinsFromD1(env, true);
+  return json(payload, {
+    headers: {
+      'Cache-Control': 'private, no-store',
+    },
+  });
+}
+
+function readFormString(form: FormData, key: string, required = false) {
+  const value = form.get(key);
+
+  if (value === null) {
+    if (required) {
+      throw new Error(`${key} is required.`);
+    }
+
+    return undefined;
+  }
+
+  if (typeof value !== 'string') {
+    throw new Error(`${key} must be a string.`);
+  }
+
+  const trimmed = value.trim();
+
+  if (required && trimmed.length === 0) {
+    throw new Error(`${key} is required.`);
+  }
+
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function readFormBoolean(form: FormData, key: string, fallback: boolean) {
+  const value = form.get(key);
+
+  if (value === null) {
+    return fallback;
+  }
+
+  return value === '1' || value === 'true';
+}
+
+function safeObjectSegment(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+async function saveBulletinPdf(file: File, bulletinId: string, env: WangenEnv) {
+  if (!env.EVENT_IMAGES) {
+    throw new Error('EVENT_IMAGES binding is not configured.');
+  }
+
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+  if (!isPdf) {
+    throw new Error('Only PDF files are accepted.');
+  }
+
+  const originalName = safeObjectSegment(file.name || 'bulletin.pdf') || 'bulletin.pdf';
+  const objectKey = `bulletins/${safeObjectSegment(bulletinId)}-${Date.now()}-${originalName}`;
+
+  await env.EVENT_IMAGES.put(objectKey, file.stream(), {
+    httpMetadata: {
+      contentType: 'application/pdf',
+      contentDisposition: `inline; filename="${originalName}"`,
+    },
+  });
+
+  return {
+    objectKey,
+    fileName: file.name || originalName,
+    fileSize: file.size,
+  };
+}
+
+async function upsertBulletin(request: Request, env: WangenEnv, existingId?: string) {
+  const db = requireDb(env);
+  const form = await request.formData();
+  const id = existingId ?? readFormString(form, 'id', true)!;
+  const title = readFormString(form, 'title', true)!;
+  const issueDate = readFormString(form, 'issueDate', true)!;
+  const yearValue = Number(readFormString(form, 'year', true));
+  const description = readFormString(form, 'description');
+  const published = readFormBoolean(form, 'published', true);
+  const file = form.get('pdf');
+
+  if (!Number.isInteger(yearValue) || yearValue < 1900 || yearValue > 2200) {
+    throw new Error('year must be a valid year.');
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate)) {
+    throw new Error('issueDate must be YYYY-MM-DD.');
+  }
+
+  const existing = existingId
+    ? await db
+        .prepare('SELECT pdf_object_key, file_name, file_size FROM bulletins WHERE id = ?')
+        .bind(existingId)
+        .first<{
+          pdf_object_key: string;
+          file_name: string | null;
+          file_size: number | null;
+        }>()
+    : null;
+
+  let pdf = existing
+    ? {
+        objectKey: existing.pdf_object_key,
+        fileName: existing.file_name ?? undefined,
+        fileSize: existing.file_size ?? undefined,
+      }
+    : null;
+
+  if (file instanceof File && file.size > 0) {
+    pdf = await saveBulletinPdf(file, id, env);
+  }
+
+  if (!pdf) {
+    throw new Error('pdf file is required.');
+  }
+
+  await db
+    .prepare(
+      `INSERT INTO bulletins (
+        id, title, year, issue_date, description, pdf_object_key, file_name, file_size,
+        published, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(id) DO UPDATE SET
+        title = excluded.title,
+        year = excluded.year,
+        issue_date = excluded.issue_date,
+        description = excluded.description,
+        pdf_object_key = excluded.pdf_object_key,
+        file_name = excluded.file_name,
+        file_size = excluded.file_size,
+        published = excluded.published,
+        updated_at = CURRENT_TIMESTAMP`,
+    )
+    .bind(
+      id,
+      title,
+      yearValue,
+      issueDate,
+      description ?? null,
+      pdf.objectKey,
+      pdf.fileName ?? null,
+      pdf.fileSize ?? null,
+      published ? 1 : 0,
+    )
+    .run();
+
+  await invalidatePublicBulletinsCache(env);
+
+  return json({ ok: true, id, pdfUrl: publicBulletinUrl(pdf.objectKey) });
+}
+
+async function deleteBulletin(bulletinId: string, env: WangenEnv) {
+  const db = requireDb(env);
+
+  await db.prepare('DELETE FROM bulletins WHERE id = ?').bind(bulletinId).run();
+  await invalidatePublicBulletinsCache(env);
+
+  return json({ ok: true });
+}
+
+async function bulletinFile(request: Request, env: WangenEnv, objectKey: string) {
+  if (!env.EVENT_IMAGES) {
+    return new Response('EVENT_IMAGES binding is not configured.', { status: 503 });
+  }
+
+  const object = await env.EVENT_IMAGES.get(objectKey);
+
+  if (!object) {
+    return new Response(null, { status: 404 });
+  }
+
+  const url = new URL(request.url);
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set('etag', object.httpEtag);
+  headers.set('Content-Type', headers.get('Content-Type') ?? 'application/pdf');
+  headers.set('Cache-Control', 'public, max-age=3600');
+
+  if (url.searchParams.get('download') === '1') {
+    const fallbackName = objectKey.split('/').pop() ?? 'bulletin.pdf';
+    headers.set('Content-Disposition', `attachment; filename="${fallbackName}"`);
+  }
+
+  return new Response(object.body, { headers });
+}
+
 async function handleApi(request: Request, env: WangenEnv) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -769,6 +1050,17 @@ async function handleApi(request: Request, env: WangenEnv) {
   try {
     if (request.method === 'GET' && path === '/api/events') {
       return publicEvents(env);
+    }
+
+    if (request.method === 'GET' && path === '/api/bulletins') {
+      return publicBulletins(env);
+    }
+
+    if (request.method === 'GET' && path.startsWith('/api/bulletins/files/')) {
+      const publicPath = `${BULLETIN_FILE_PREFIX}${path.replace('/api/bulletins/files/', '')}`;
+      const redirectUrl = new URL(request.url);
+      redirectUrl.pathname = publicPath;
+      return Response.redirect(redirectUrl.toString(), 308);
     }
 
     if (request.method === 'GET' && path.startsWith('/api/events/media/')) {
@@ -791,8 +1083,16 @@ async function handleApi(request: Request, env: WangenEnv) {
       return adminEvents(env);
     }
 
+    if (path === '/api/admin/bulletins' && request.method === 'GET') {
+      return adminBulletins(env);
+    }
+
     if (path === '/api/admin/events' && request.method === 'POST') {
       return upsertEvent(request, env);
+    }
+
+    if (path === '/api/admin/bulletins' && request.method === 'POST') {
+      return upsertBulletin(request, env);
     }
 
     if (path === '/api/admin/event-images' && request.method === 'POST') {
@@ -817,6 +1117,20 @@ async function handleApi(request: Request, env: WangenEnv) {
       }
     }
 
+    const bulletinMatch = path.match(/^\/api\/admin\/bulletins\/([^/]+)$/);
+
+    if (bulletinMatch?.[1]) {
+      const bulletinId = decodeURIComponent(bulletinMatch[1]);
+
+      if (request.method === 'PUT') {
+        return upsertBulletin(request, env, bulletinId);
+      }
+
+      if (request.method === 'DELETE') {
+        return deleteBulletin(bulletinId, env);
+      }
+    }
+
     return json({ error: 'Not found' }, { status: 404 });
   } catch (error) {
     return json(
@@ -836,6 +1150,18 @@ async function handleApi(request: Request, env: WangenEnv) {
 export default {
   fetch(request, env) {
     const url = new URL(request.url);
+
+    if (request.method === 'GET' && url.pathname === BULLETIN_DATA_PATH) {
+      return publicBulletins(env);
+    }
+
+    if (request.method === 'GET' && url.pathname.startsWith(BULLETIN_FILE_PREFIX)) {
+      return bulletinFile(
+        request,
+        env,
+        decodeURIComponent(url.pathname.replace(BULLETIN_FILE_PREFIX, '')),
+      );
+    }
 
     if (url.pathname.startsWith('/api/')) {
       return handleApi(request, env);

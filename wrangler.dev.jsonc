@@ -7,7 +7,12 @@
 	"main": "worker/index.ts",
 	"compatibility_date": "2026-01-28",
 	"assets": {
-		"not_found_handling": "single-page-application"
+		"not_found_handling": "single-page-application",
+		"run_worker_first": [
+			"/api/*",
+			"/bulletins/data.json",
+			"/bulletins/files/*"
+		]
 	},
 	"observability": {
 		"enabled": true

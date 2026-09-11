@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  FileText,
   ImagePlus,
   Loader2,
   Plus,
@@ -383,6 +384,14 @@ export default function AdminEventsPage() {
           </div>
 
           <nav className="mt-4 space-y-2 border-b border-slate-200 pb-4">
+            <a
+              href="/admin/bulletins"
+              className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              <FileText className="h-4 w-4" />
+              Bulletins
+            </a>
+
             <a
               href="/admin/metrics"
               className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"

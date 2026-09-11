@@ -71,13 +71,19 @@ function formatDay(value: string) {
   }).format(date);
 }
 
-function AdminNav({ active }: { active: 'events' | 'metrics' }) {
+function AdminNav({ active }: { active: 'events' | 'bulletins' | 'metrics' }) {
   const items = [
     {
       id: 'events',
       href: '/admin/events',
       label: 'Événements',
       icon: CalendarDays,
+    },
+    {
+      id: 'bulletins',
+      href: '/admin/bulletins',
+      label: 'Bulletins',
+      icon: FileText,
     },
     {
       id: 'metrics',

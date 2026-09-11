@@ -8,7 +8,12 @@
 	"main": "worker/index.ts",
 	"compatibility_date": "2026-01-28",
 	"assets": {
-		"not_found_handling": "single-page-application"
+		"not_found_handling": "single-page-application",
+		"run_worker_first": [
+			"/api/*",
+			"/bulletins/data.json",
+			"/bulletins/files/*"
+		]
 	},
 	"observability": {
 		"enabled": true
@@ -17,7 +22,8 @@
 		{
 			"binding": "CONTENT_DB",
 			"database_name": "mairie-db-prod",
-			"migrations_dir": "migrations"
+			"migrations_dir": "migrations",
+			"database_id": "d57159e4-7cee-4cec-b640-fecf33133790"
 		}
 	],
 	"kv_namespaces": [
@@ -39,7 +45,8 @@
 		}
 	],
 	"vars": {
-		"PAGE_ANALYTICS_DATASET": "wangen_page_visits"
+		"PAGE_ANALYTICS_DATASET": "wangen_page_visits",
+		"CLOUDFLARE_ACCOUNT_ID": "fb82df81e5dd8e3e714d84a9b14a634b"
 	}
 	/**
 	 * Smart Placement

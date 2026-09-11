@@ -1,8 +1,15 @@
 import { listAssociations as listStaticAssociations } from '../data/associations';
+import { listStaticBulletins } from '../data/bulletins';
 import type { AssociationData } from './associationSchema';
+import { normalizeBulletin, type BulletinCommunal } from './bulletinSchema';
 
 export type ContentState = {
   associations: AssociationData[];
+  source: 'api' | 'static';
+};
+
+export type BulletinsState = {
+  bulletins: BulletinCommunal[];
   source: 'api' | 'static';
 };
 
@@ -56,4 +63,32 @@ export function getAssociationEventBySlugs(
   }
 
   return { association, event };
+}
+
+export async function loadBulletins(): Promise<BulletinsState> {
+  try {
+    const response = await fetch('/bulletins/data.json', {
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Bulletins API returned ${response.status}.`);
+    }
+
+    const payload = (await response.json()) as { bulletins?: BulletinCommunal[] };
+
+    if (!Array.isArray(payload.bulletins)) {
+      throw new Error('Bulletins API returned an invalid payload.');
+    }
+
+    return {
+      bulletins: payload.bulletins.map(normalizeBulletin),
+      source: 'api',
+    };
+  } catch {
+    return {
+      bulletins: listStaticBulletins(),
+      source: 'static',
+    };
+  }
 }
