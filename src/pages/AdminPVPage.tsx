@@ -13,15 +13,15 @@ import {
   Upload,
 } from 'lucide-react';
 import AdminNav from '../components/AdminNav';
-import { normalizeBulletin, type BulletinCommunal } from '../lib/bulletinSchema';
+import { normalizeProcesVerbal, type ProcesVerbal } from '../lib/procesVerbalSchema';
 
-const BulletinFlipbook = lazy(() => import('../components/BulletinFlipbook'));
+const ProcesVerbalFlipbook = lazy(() => import('../components/BulletinFlipbook'));
 
-type EditableBulletin = BulletinCommunal & {
+type EditableProcesVerbal = ProcesVerbal & {
   pdfFile?: File | null;
 };
 
-const emptyBulletin: EditableBulletin = {
+const emptyProcesVerbal: EditableProcesVerbal = {
   id: '',
   title: '',
   year: new Date().getFullYear(),
@@ -34,7 +34,7 @@ const emptyBulletin: EditableBulletin = {
   pdfFile: null,
 };
 
-const bulletinsPerPage = 8;
+const procesVerbauxPerPage = 8;
 
 function createSlug(value: string) {
   return value
@@ -52,70 +52,69 @@ function normalizeSearchValue(value: string) {
     .toLowerCase();
 }
 
-function createBulletinId(title: string, issueDate: string) {
-  return ['bc', issueDate, createSlug(title)].filter(Boolean).join('-');
+function createProcesVerbalId(title: string, issueDate: string) {
+  return ['pv', issueDate, createSlug(title)].filter(Boolean).join('-');
 }
 
-
-export default function AdminBulletinsPage() {
-  const [bulletins, setBulletins] = useState<BulletinCommunal[]>([]);
+export default function AdminProcesVerbauxPage() {
+  const [procesVerbaux, setProcesVerbaux] = useState<ProcesVerbal[]>([]);
   const [selectedId, setSelectedId] = useState<string>('new');
-  const [draft, setDraft] = useState<EditableBulletin>(emptyBulletin);
+  const [draft, setDraft] = useState<EditableProcesVerbal>(emptyProcesVerbal);
   const [status, setStatus] = useState('Chargement...');
   const [saving, setSaving] = useState(false);
-  const [bulletinSearch, setBulletinSearch] = useState('');
-  const [bulletinPage, setBulletinPage] = useState(1);
+  const [procesVerbalSearch, setProcesVerbalSearch] = useState('');
+  const [procesVerbalPage, setProcesVerbalPage] = useState(1);
 
-  const selectedExistingBulletin = useMemo(
-    () => bulletins.find((bulletin) => bulletin.id === selectedId) ?? null,
-    [bulletins, selectedId],
+  const selectedExistingProcesVerbal = useMemo(
+    () => procesVerbaux.find((procesVerbal) => procesVerbal.id === selectedId) ?? null,
+    [procesVerbaux, selectedId],
   );
 
-  const filteredBulletins = useMemo(() => {
-    const search = normalizeSearchValue(bulletinSearch.trim());
+  const filteredProcesVerbaux = useMemo(() => {
+    const search = normalizeSearchValue(procesVerbalSearch.trim());
 
     if (!search) {
-      return bulletins;
+      return procesVerbaux;
     }
 
-    return bulletins.filter((bulletin) =>
-      normalizeSearchValue(`${bulletin.title} ${bulletin.year}`).includes(search),
+    return procesVerbaux.filter((procesVerbal) =>
+      normalizeSearchValue(`${procesVerbal.title} ${procesVerbal.year}`).includes(search),
     );
-  }, [bulletinSearch, bulletins]);
+  }, [procesVerbalSearch, procesVerbaux]);
 
-  const totalBulletinPages = Math.max(
-    Math.ceil(filteredBulletins.length / bulletinsPerPage),
+  const totalProcesVerbalPages = Math.max(
+    Math.ceil(filteredProcesVerbaux.length / procesVerbauxPerPage),
     1,
   );
-  const pagedBulletins = filteredBulletins.slice(
-    (bulletinPage - 1) * bulletinsPerPage,
-    bulletinPage * bulletinsPerPage,
+  const pagedProcesVerbaux = filteredProcesVerbaux.slice(
+    (procesVerbalPage - 1) * procesVerbauxPerPage,
+    procesVerbalPage * procesVerbauxPerPage,
   );
 
   useEffect(() => {
-    void reloadBulletins();
+    void reloadProcesVerbaux();
   }, []);
 
   useEffect(() => {
-    setBulletinPage(1);
-  }, [bulletinSearch, bulletins.length]);
+    setProcesVerbalPage(1);
+  }, [procesVerbalSearch, procesVerbaux.length]);
 
   useEffect(() => {
-    setBulletinPage((current) => Math.min(current, totalBulletinPages));
-  }, [totalBulletinPages]);
+    setProcesVerbalPage((current) => Math.min(current, totalProcesVerbalPages));
+  }, [totalProcesVerbalPages]);
 
   useEffect(() => {
-    if (selectedExistingBulletin) {
-      setDraft({ ...selectedExistingBulletin, pdfFile: null });
+    if (selectedExistingProcesVerbal) {
+      setDraft({ ...selectedExistingProcesVerbal, pdfFile: null });
       return;
     }
 
-    setDraft(emptyBulletin);
-  }, [selectedExistingBulletin]);
+    setDraft(emptyProcesVerbal);
+  }, [selectedExistingProcesVerbal]);
 
-  async function reloadBulletins() {
+  async function reloadProcesVerbaux() {
     try {
-      const response = await fetch('/api/admin/bulletins', {
+      const response = await fetch('/api/admin/proces-verbaux', {
         headers: { Accept: 'application/json' },
       });
 
@@ -123,19 +122,19 @@ export default function AdminBulletinsPage() {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const payload = (await response.json()) as { bulletins: BulletinCommunal[] };
-      const loadedBulletins = (payload.bulletins ?? []).map(normalizeBulletin);
-      setBulletins(loadedBulletins);
+      const payload = (await response.json()) as { procesVerbaux: ProcesVerbal[] };
+      const loadedProcesVerbaux = (payload.procesVerbaux ?? []).map(normalizeProcesVerbal);
+      setProcesVerbaux(loadedProcesVerbaux);
       setStatus('');
 
-      return loadedBulletins;
+      return loadedProcesVerbaux;
     } catch {
-      setStatus("Impossible de charger les bulletins d'administration.");
+      setStatus("Impossible de charger les procès-verbaux d'administration.");
       return [];
     }
   }
 
-  function updateDraft(key: keyof EditableBulletin, value: string | number | boolean | File | null) {
+  function updateDraft(key: keyof EditableProcesVerbal, value: string | number | boolean | File | null) {
     setDraft((current) => ({
       ...current,
       [key]: value,
@@ -146,7 +145,7 @@ export default function AdminBulletinsPage() {
     setDraft((current) => ({
       ...current,
       title: value,
-      id: selectedExistingBulletin ? current.id : createBulletinId(value, current.issueDate),
+      id: selectedExistingProcesVerbal ? current.id : createProcesVerbalId(value, current.issueDate),
     }));
   }
 
@@ -157,16 +156,16 @@ export default function AdminBulletinsPage() {
       ...current,
       issueDate: value,
       year,
-      id: selectedExistingBulletin ? current.id : createBulletinId(current.title, value),
+      id: selectedExistingProcesVerbal ? current.id : createProcesVerbalId(current.title, value),
     }));
   }
 
-  async function saveBulletin(event: FormEvent<HTMLFormElement>) {
+  async function saveProcesVerbal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     setStatus('');
 
-    const id = draft.id || createBulletinId(draft.title, draft.issueDate);
+    const id = draft.id || createProcesVerbalId(draft.title, draft.issueDate);
     const form = new FormData();
     form.set('id', id);
     form.set('title', draft.title);
@@ -179,10 +178,10 @@ export default function AdminBulletinsPage() {
       form.set('pdf', draft.pdfFile);
     }
 
-    const endpoint = selectedExistingBulletin
-      ? `/api/admin/bulletins/${encodeURIComponent(selectedExistingBulletin.id)}`
-      : '/api/admin/bulletins';
-    const method = selectedExistingBulletin ? 'PUT' : 'POST';
+    const endpoint = selectedExistingProcesVerbal
+      ? `/api/admin/proces-verbaux/${encodeURIComponent(selectedExistingProcesVerbal.id)}`
+      : '/api/admin/proces-verbaux';
+    const method = selectedExistingProcesVerbal ? 'PUT' : 'POST';
 
     try {
       const response = await fetch(endpoint, {
@@ -196,25 +195,25 @@ export default function AdminBulletinsPage() {
         return;
       }
 
-      const loadedBulletins = await reloadBulletins();
+      const loadedProcesVerbaux = await reloadProcesVerbaux();
       setSelectedId(id);
       setDraft({
-        ...(loadedBulletins.find((bulletin) => bulletin.id === id) ?? draft),
+        ...(loadedProcesVerbaux.find((procesVerbal) => procesVerbal.id === id) ?? draft),
         pdfFile: null,
       });
-      setStatus('Bulletin enregistré.');
+      setStatus('Procès-verbal enregistré.');
     } finally {
       setSaving(false);
     }
   }
 
-  async function deleteBulletin() {
-    if (!selectedExistingBulletin) {
+  async function deleteProcesVerbal() {
+    if (!selectedExistingProcesVerbal) {
       return;
     }
 
     const response = await fetch(
-      `/api/admin/bulletins/${encodeURIComponent(selectedExistingBulletin.id)}`,
+      `/api/admin/proces-verbaux/${encodeURIComponent(selectedExistingProcesVerbal.id)}`,
       { method: 'DELETE' },
     );
 
@@ -223,9 +222,9 @@ export default function AdminBulletinsPage() {
       return;
     }
 
-    await reloadBulletins();
+    await reloadProcesVerbaux();
     setSelectedId('new');
-    setStatus('Bulletin supprimé.');
+    setStatus('Procès-verbal supprimé.');
   }
 
   return (
@@ -237,7 +236,7 @@ export default function AdminBulletinsPage() {
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-700">
                 Administration
               </p>
-              <h1 className="mt-1 text-2xl font-bold">Bulletins communaux</h1>
+              <h1 className="mt-1 text-2xl font-bold">Procès-verbaux</h1>
             </div>
 
             <a
@@ -257,31 +256,31 @@ export default function AdminBulletinsPage() {
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-700">
                   Admin
                 </p>
-                <h1 className="mt-1 text-xl font-bold">Bulletins</h1>
+                <h1 className="mt-1 text-xl font-bold">Procès-verbaux</h1>
               </div>
 
               <button
                 type="button"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-700 text-white"
                 onClick={() => setSelectedId('new')}
-                title="Nouveau bulletin"
+                title="Nouveau procès-verbal"
               >
                 <Plus className="h-5 w-5" />
               </button>
             </div>
 
-            <AdminNav active="bulletins" />
+            <AdminNav active="procesverbal" />
 
             <div className="mt-4">
               <label className="text-sm font-semibold text-slate-700">
-                Rechercher par nom
+                Rechercher par procès-verbal
                 <span className="mt-2 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2">
                   <Search className="h-4 w-4 text-slate-400" />
                   <input
                     className="w-full border-0 bg-transparent text-sm outline-none placeholder:text-slate-400"
-                    value={bulletinSearch}
-                    onChange={(event) => setBulletinSearch(event.target.value)}
-                    placeholder="Nom du bulletin"
+                    value={procesVerbalSearch}
+                    onChange={(event) => setProcesVerbalSearch(event.target.value)}
+                    placeholder="Nom du procès-verbal"
                   />
                 </span>
               </label>
@@ -289,34 +288,34 @@ export default function AdminBulletinsPage() {
 
             <div className="mt-4 space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                <span>{filteredBulletins.length} bulletin(s)</span>
+                <span>{filteredProcesVerbaux.length} procès-verbal(aux)</span>
                 <span>
-                  Page {bulletinPage} / {totalBulletinPages}
+                  Page {procesVerbalPage} / {totalProcesVerbalPages}
                 </span>
               </div>
 
-              {pagedBulletins.map((bulletin) => (
+              {pagedProcesVerbaux.map((procesVerbal) => (
                 <button
-                  key={bulletin.id}
+                  key={procesVerbal.id}
                   type="button"
-                  onClick={() => setSelectedId(bulletin.id)}
+                  onClick={() => setSelectedId(procesVerbal.id)}
                   className={`w-full rounded-lg border px-3 py-3 text-left text-sm transition ${
-                    selectedId === bulletin.id
+                    selectedId === procesVerbal.id
                       ? 'border-blue-700 bg-blue-50'
                       : 'border-slate-200 bg-white hover:bg-slate-50'
                   }`}
                 >
-                  <span className="block font-semibold">{bulletin.title}</span>
+                  <span className="block font-semibold">{procesVerbal.title}</span>
                   <span className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                     <FileText className="h-3.5 w-3.5" />
-                    {bulletin.issueDate || bulletin.year}
+                    {procesVerbal.issueDate || procesVerbal.year}
                   </span>
                 </button>
               ))}
 
-              {pagedBulletins.length === 0 ? (
+              {pagedProcesVerbaux.length === 0 ? (
                 <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-4 text-sm font-semibold text-slate-500">
-                  Aucun bulletin trouvé.
+                  Aucun procès-verbal trouvé.
                 </p>
               ) : null}
             </div>
@@ -325,8 +324,8 @@ export default function AdminBulletinsPage() {
               <button
                 type="button"
                 className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={bulletinPage <= 1}
-                onClick={() => setBulletinPage((current) => Math.max(current - 1, 1))}
+                disabled={procesVerbalPage <= 1}
+                onClick={() => setProcesVerbalPage((current) => Math.max(current - 1, 1))}
               >
                 <ChevronLeft className="h-4 w-4" />
                 Précédent
@@ -335,9 +334,9 @@ export default function AdminBulletinsPage() {
               <button
                 type="button"
                 className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={bulletinPage >= totalBulletinPages}
+                disabled={procesVerbalPage >= totalProcesVerbalPages}
                 onClick={() =>
-                  setBulletinPage((current) => Math.min(current + 1, totalBulletinPages))
+                  setProcesVerbalPage((current) => Math.min(current + 1, totalProcesVerbalPages))
                 }
               >
                 Suivant
@@ -348,7 +347,7 @@ export default function AdminBulletinsPage() {
 
           <form
             className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
-            onSubmit={saveBulletin}
+            onSubmit={saveProcesVerbal}
           >
             <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -356,14 +355,14 @@ export default function AdminBulletinsPage() {
                   Contenu
                 </p>
                 <h2 className="mt-1 text-2xl font-bold">
-                  {selectedExistingBulletin ? 'Modifier un bulletin' : 'Nouveau bulletin'}
+                  {selectedExistingProcesVerbal ? 'Modifier un procès-verbal' : 'Nouveau procès-verbal'}
                 </h2>
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {selectedExistingBulletin?.pdfUrl ? (
+                {selectedExistingProcesVerbal?.pdfUrl ? (
                   <a
-                    href={`${selectedExistingBulletin.pdfUrl}?download=1`}
+                    href={`${selectedExistingProcesVerbal.pdfUrl}?download=1`}
                     className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
                   >
                     <Download className="h-4 w-4" />
@@ -371,11 +370,11 @@ export default function AdminBulletinsPage() {
                   </a>
                 ) : null}
 
-                {selectedExistingBulletin ? (
+                {selectedExistingProcesVerbal ? (
                   <button
                     type="button"
                     className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700"
-                    onClick={deleteBulletin}
+                    onClick={deleteProcesVerbal}
                   >
                     <Trash2 className="h-4 w-4" />
                     Supprimer
@@ -402,13 +401,13 @@ export default function AdminBulletinsPage() {
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                   value={draft.title}
                   onChange={(event) => updateTitle(event.target.value)}
-                  placeholder="Bulletin communal - Janvier 2026"
+                  placeholder="Conseil municipal - 15 janvier 2026"
                   required
                 />
               </label>
 
               <label className="text-sm font-semibold">
-                Date de publication
+                Date du procès-verbal
                 <input
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
                   type="date"
@@ -438,7 +437,7 @@ export default function AdminBulletinsPage() {
                   value={draft.id}
                   onChange={(event) => updateDraft('id', createSlug(event.target.value))}
                   required
-                  readOnly={!selectedExistingBulletin}
+                  readOnly={!selectedExistingProcesVerbal}
                 />
               </label>
 
@@ -460,7 +459,7 @@ export default function AdminBulletinsPage() {
                   className="mt-1 min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2"
                   value={draft.description ?? ''}
                   onChange={(event) => updateDraft('description', event.target.value)}
-                  placeholder="Courte présentation affichée sur la page publique."
+                  placeholder="Courte présentation du procès-verbal affichée sur la page publique."
                 />
               </label>
 
@@ -468,14 +467,14 @@ export default function AdminBulletinsPage() {
                 <span className="inline-flex min-w-0 items-center gap-2">
                   <Upload className="h-4 w-4 text-blue-700" />
                   <span className="min-w-0 truncate">
-                    {draft.pdfFile?.name ?? draft.fileName ?? 'Envoyer un PDF'}
+                    {draft.pdfFile?.name ?? draft.fileName ?? 'Envoyer le PDF du procès-verbal'}
                   </span>
                 </span>
                 <input
                   className="max-w-56 text-xs"
                   type="file"
                   accept="application/pdf,.pdf"
-                  required={!selectedExistingBulletin}
+                  required={!selectedExistingProcesVerbal}
                   onChange={(event) => {
                     updateDraft('pdfFile', event.target.files?.[0] ?? null);
                   }}
@@ -487,7 +486,7 @@ export default function AdminBulletinsPage() {
               <div className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
                 <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700">
                   <FileText className="h-4 w-4 text-blue-700" />
-                  Aperçu du PDF publié
+                  Aperçu du procès-verbal publié
                 </div>
                 <div className="p-3">
                   <Suspense
@@ -497,10 +496,10 @@ export default function AdminBulletinsPage() {
                       </div>
                     }
                   >
-                    <BulletinFlipbook
+                    <ProcesVerbalFlipbook
                       key={draft.pdfUrl}
                       pdfUrl={draft.pdfUrl}
-                      title={draft.title || 'Bulletin communal'}
+                      title={draft.title || 'Procès-verbal'}
                     />
                   </Suspense>
                 </div>

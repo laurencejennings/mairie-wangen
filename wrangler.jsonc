@@ -12,7 +12,9 @@
 		"run_worker_first": [
 			"/api/*",
 			"/bulletins/data.json",
-			"/bulletins/files/*"
+			"/bulletins/files/*",
+			"/proces-verbaux/data.json",
+			"/proces-verbaux/files/*"
 		]
 	},
 	"observability": {

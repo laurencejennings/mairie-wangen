@@ -3,14 +3,13 @@ import {
   Activity,
   AlertCircle,
   ArrowLeft,
-  BarChart3,
-  CalendarDays,
   ExternalLink,
   FileText,
   Loader2,
   MousePointerClick,
   type LucideIcon,
 } from 'lucide-react';
+import AdminNav from '../components/AdminNav';
 
 type MetricsRange = '7d' | '30d' | '90d';
 
@@ -69,53 +68,6 @@ function formatDay(value: string) {
     day: '2-digit',
     month: 'short',
   }).format(date);
-}
-
-function AdminNav({ active }: { active: 'events' | 'bulletins' | 'metrics' }) {
-  const items = [
-    {
-      id: 'events',
-      href: '/admin/events',
-      label: 'Événements',
-      icon: CalendarDays,
-    },
-    {
-      id: 'bulletins',
-      href: '/admin/bulletins',
-      label: 'Bulletins',
-      icon: FileText,
-    },
-    {
-      id: 'metrics',
-      href: '/admin/metrics',
-      label: 'Statistiques',
-      icon: BarChart3,
-    },
-  ] as const;
-
-  return (
-    <nav className="mt-5 space-y-2">
-      {items.map((item) => {
-        const Icon = item.icon;
-        const selected = active === item.id;
-
-        return (
-          <a
-            key={item.id}
-            href={item.href}
-            className={`flex items-center gap-3 rounded-lg border px-3 py-3 text-sm font-semibold transition ${
-              selected
-                ? 'border-blue-700 bg-blue-50 text-blue-800'
-                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            <Icon className="h-4 w-4" />
-            {item.label}
-          </a>
-        );
-      })}
-    </nav>
-  );
 }
 
 function StatCard({

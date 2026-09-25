@@ -1,7 +1,9 @@
 import { listAssociations as listStaticAssociations } from '../data/associations';
 import { listStaticBulletins } from '../data/bulletins';
+import { listStaticProcesVerbaux } from '../data/procesVerbaux';
 import type { AssociationData } from './associationSchema';
 import { normalizeBulletin, type BulletinCommunal } from './bulletinSchema';
+import { normalizeProcesVerbal, type ProcesVerbal } from './procesVerbalSchema';
 
 export type ContentState = {
   associations: AssociationData[];
@@ -10,6 +12,11 @@ export type ContentState = {
 
 export type BulletinsState = {
   bulletins: BulletinCommunal[];
+  source: 'api' | 'static';
+};
+
+export type ProcesVerbauxState = {
+  procesVerbaux: ProcesVerbal[];
   source: 'api' | 'static';
 };
 
@@ -88,6 +95,37 @@ export async function loadBulletins(): Promise<BulletinsState> {
   } catch {
     return {
       bulletins: listStaticBulletins(),
+      source: 'static',
+    };
+  }
+}
+
+
+export async function loadProcesVerbaux(): Promise<ProcesVerbauxState> {
+  try {
+    const response = await fetch('/proces-verbaux/data.json', {
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Procès-verbaux API returned ${response.status}.`);
+    }
+
+    const payload = (await response.json()) as {
+      procesVerbaux?: ProcesVerbal[];
+    };
+
+    if (!Array.isArray(payload.procesVerbaux)) {
+      throw new Error('Procès-verbaux API returned an invalid payload.');
+    }
+
+    return {
+      procesVerbaux: payload.procesVerbaux.map(normalizeProcesVerbal),
+      source: 'api',
+    };
+  } catch {
+    return {
+      procesVerbaux: listStaticProcesVerbaux(),
       source: 'static',
     };
   }

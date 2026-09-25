@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   ArrowLeft,
-  BarChart3,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  FileText,
   ImagePlus,
   Loader2,
   Plus,
@@ -13,6 +11,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
+import AdminNav from '../components/AdminNav';
 import type { AssociationData, AssociationEvent } from '../lib/associationSchema';
 
 type EditableEvent = AssociationEvent & {
@@ -383,23 +382,7 @@ export default function AdminEventsPage() {
             </button>
           </div>
 
-          <nav className="mt-4 space-y-2 border-b border-slate-200 pb-4">
-            <a
-              href="/admin/bulletins"
-              className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              <FileText className="h-4 w-4" />
-              Bulletins
-            </a>
-
-            <a
-              href="/admin/metrics"
-              className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              <BarChart3 className="h-4 w-4" />
-              Statistiques
-            </a>
-          </nav>
+          <AdminNav active="events" />
 
           <div className="mt-4">
             <label className="text-sm font-semibold text-slate-700">

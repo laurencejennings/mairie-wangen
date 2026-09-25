@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import type { AssociationData } from './lib/associationSchema';
 import type { BulletinCommunal } from './lib/bulletinSchema';
-import { loadBulletins } from './lib/contentApi';
+import { loadBulletins, loadProcesVerbaux } from './lib/contentApi';
+import type { ProcesVerbal } from './lib/procesVerbalSchema';
 
 const COLORS = {
   blue: '#1457F2',
@@ -119,20 +120,23 @@ function getAgendaDateLabel(date: string) {
   return agendaDateFormatter.format(parsed);
 }
 
-function getRecentBulletin(bulletins: BulletinCommunal[]) {
+function getRecentDocument(documents: BulletinCommunal[]) {
   const oneMonthAgo = new Date();
   oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-  return bulletins
-    .filter((bulletin) => {
-      if (bulletin.published === false) {
-        return false;
-      }
+  return (
+    documents
+      .filter((document) => {
+        if (document.published === false) {
+          return false;
+        }
 
-      const issueDate = new Date(`${bulletin.issueDate}T00:00:00`);
-      return !Number.isNaN(issueDate.getTime()) && issueDate >= oneMonthAgo;
-    })
-    .sort((a, b) => b.issueDate.localeCompare(a.issueDate))[0] ?? null;
+        const issueDate = new Date(`${document.issueDate}T00:00:00`);
+
+        return !Number.isNaN(issueDate.getTime()) && issueDate >= oneMonthAgo;
+      })
+      .sort((a, b) => b.issueDate.localeCompare(a.issueDate))[0] ?? null
+  );
 }
 
 function formatBulletinDate(value: string) {
@@ -451,13 +455,21 @@ export default function MairieWangenHome({ associations }: { associations: Assoc
   const upcomingEvents = getUpcomingAssociationEvents(associations, 5);
   const hasEvents = upcomingEvents.length > 0;
   const [recentBulletin, setRecentBulletin] = useState<BulletinCommunal | null>(null);
+  const [recentProcesVerbal, setRecentProcesVerbal] =
+  useState<ProcesVerbal | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     loadBulletins().then((content) => {
       if (!cancelled) {
-        setRecentBulletin(getRecentBulletin(content.bulletins));
+        setRecentBulletin(getRecentDocument(content.bulletins));
+      }
+    });
+
+    loadProcesVerbaux().then((content) => {
+      if (!cancelled) {
+        setRecentProcesVerbal(getRecentDocument(content.procesVerbaux));
       }
     });
 
@@ -504,6 +516,25 @@ export default function MairieWangenHome({ associations }: { associations: Assoc
                   <Mail className="h-4 w-4" aria-hidden="true" />
                   Envoyer un mail
                 </TopAction>
+                <div className={recentProcesVerbal ? 'w-full' : undefined}>
+  <TopAction
+    href="/proces-verbaux"
+    accent={{ main: COLORS.purple, soft: COLORS.purpleSoft }}
+  >
+    <FileText className="h-4 w-4" aria-hidden="true" />
+    Procès-verbaux
+  </TopAction>
+
+  {recentProcesVerbal ? (
+    <a
+      href="/proces-verbaux"
+      className="mt-2 block rounded-2xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-bold leading-5 text-purple-800 transition hover:bg-purple-100"
+    >
+      Nouveau procès-verbal publié le{' '}
+      {formatBulletinDate(recentProcesVerbal.issueDate)}
+    </a>
+  ) : null}
+</div>
                 <div className="w-full">
                   <TopAction href="/bulletins" accent={{ main: COLORS.orange, soft: COLORS.orangeSoft }}>
                     <FileText className="h-4 w-4" aria-hidden="true" />
