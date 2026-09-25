@@ -75,3 +75,24 @@ export const bulletins = sqliteTable(
     index('idx_bulletins_year_issue_date').on(table.year, table.issueDate),
   ],
 );
+
+export const procesVerbals = sqliteTable(
+  'proces_verbals',
+  {
+    id: text('id').primaryKey(),
+    title: text('title').notNull(),
+    year: integer('year').notNull(),
+    issueDate: text('issue_date').notNull(),
+    description: text('description'),
+    pdfObjectKey: text('pdf_object_key').notNull(),
+    fileName: text('file_name'),
+    fileSize: integer('file_size'),
+    published: integer('published', { mode: 'boolean' }).notNull().default(true),
+    createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index('idx_proces_verbals_published_issue_date').on(table.published, table.issueDate),
+    index('idx_proces_verbals_year_issue_date').on(table.year, table.issueDate),
+  ],
+);

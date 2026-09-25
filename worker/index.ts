@@ -1,6 +1,7 @@
 import { listAssociations as listStaticAssociations } from '../src/data/associations';
 import type { AssociationData, AssociationEvent, EventPhoto } from '../src/lib/associationSchema';
 import type { BulletinCommunal } from '../src/lib/bulletinSchema';
+import type { ProcesVerbal } from '../src/lib/procesVerbalSchema';
 
 type WangenEnv = Env & {
   CONTENT_DB?: D1Database;
@@ -58,6 +59,8 @@ type BulletinRow = {
   updated_at: string;
 };
 
+type ProcesVerbalRow = BulletinRow;
+
 type MetricsRange = '7d' | '30d' | '90d';
 
 type AnalyticsSqlResponse = {
@@ -69,6 +72,8 @@ const CONTENT_CACHE_KEY = 'content:events:v1';
 const BULLETINS_CACHE_KEY = 'content:bulletins:v2';
 const BULLETIN_DATA_PATH = '/bulletins/data.json';
 const BULLETIN_FILE_PREFIX = '/bulletins/files/';
+const PROCES_VERBAUX_DATA_PATH = '/proces-verbaux/data.json';
+const PROCES_VERBAL_FILE_PREFIX = '/proces-verbaux/files/';
 const PAGE_ANALYTICS_DATASET = 'wangen_page_visits';
 const JSON_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -133,6 +138,10 @@ function publicMediaUrl(objectKey: string) {
 
 function publicBulletinUrl(objectKey: string) {
   return `${BULLETIN_FILE_PREFIX}${objectKey}`;
+}
+
+function publicProcesVerbalUrl(objectKey: string) {
+  return `${PROCES_VERBAL_FILE_PREFIX}${objectKey}`;
 }
 
 function normalizeTrackedPath(value: unknown) {
@@ -856,6 +865,36 @@ async function adminBulletins(env: WangenEnv) {
   });
 }
 
+function procesVerbalFromRow(row: ProcesVerbalRow): ProcesVerbal {
+  return {
+    id: row.id, title: row.title, year: row.year, issueDate: row.issue_date,
+    description: row.description ?? undefined, pdfUrl: publicProcesVerbalUrl(row.pdf_object_key),
+    fileName: row.file_name ?? undefined, fileSize: row.file_size ?? undefined,
+    published: row.published === 1, createdAt: row.created_at, updatedAt: row.updated_at,
+  };
+}
+
+async function loadProcesVerbauxFromD1(env: WangenEnv, includeDrafts = false) {
+  if (!env.CONTENT_DB) return { procesVerbaux: [], source: 'static' };
+  const result = await env.CONTENT_DB.prepare(
+    `SELECT id, title, year, issue_date, description, pdf_object_key, file_name, file_size,
+      published, created_at, updated_at FROM proces_verbals
+    WHERE ? = 1 OR published = 1 ORDER BY year DESC, issue_date DESC, title`,
+  ).bind(includeDrafts ? 1 : 0).all<ProcesVerbalRow>();
+  return { procesVerbaux: result.results.map(procesVerbalFromRow), source: 'd1' };
+}
+
+async function publicProcesVerbaux(env: WangenEnv) {
+  const body = JSON.stringify(await loadProcesVerbauxFromD1(env));
+  return new Response(body, {
+    headers: { ...JSON_HEADERS, 'Cache-Control': 'no-store' },
+  });
+}
+
+async function adminProcesVerbaux(env: WangenEnv) {
+  return json(await loadProcesVerbauxFromD1(env, true), { headers: { 'Cache-Control': 'private, no-store' } });
+}
+
 function readFormString(form: FormData, key: string, required = false) {
   const value = form.get(key);
 
@@ -1008,6 +1047,53 @@ async function upsertBulletin(request: Request, env: WangenEnv, existingId?: str
   return json({ ok: true, id, pdfUrl: publicBulletinUrl(pdf.objectKey) });
 }
 
+async function saveProcesVerbalPdf(file: File, id: string, env: WangenEnv) {
+  if (!env.EVENT_IMAGES) throw new Error('EVENT_IMAGES binding is not configured.');
+  if (!(file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
+    throw new Error('Only PDF files are accepted.');
+  }
+  const originalName = safeObjectSegment(file.name || 'proces-verbal.pdf') || 'proces-verbal.pdf';
+  const objectKey = `proces-verbaux/${safeObjectSegment(id)}-${Date.now()}-${originalName}`;
+  await env.EVENT_IMAGES.put(objectKey, file.stream(), {
+    httpMetadata: { contentType: 'application/pdf', contentDisposition: `inline; filename="${originalName}"` },
+  });
+  return { objectKey, fileName: file.name || originalName, fileSize: file.size };
+}
+
+async function upsertProcesVerbal(request: Request, env: WangenEnv, existingId?: string) {
+  const db = requireDb(env);
+  const form = await request.formData();
+  const id = existingId ?? readFormString(form, 'id', true)!;
+  const title = readFormString(form, 'title', true)!;
+  const issueDate = readFormString(form, 'issueDate', true)!;
+  const year = Number(readFormString(form, 'year', true));
+  const description = readFormString(form, 'description');
+  const published = readFormBoolean(form, 'published', true);
+  const file = form.get('pdf');
+  if (!Number.isInteger(year) || year < 1900 || year > 2200) throw new Error('year must be a valid year.');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate)) throw new Error('issueDate must be YYYY-MM-DD.');
+  const existing = existingId ? await db.prepare(
+    'SELECT pdf_object_key, file_name, file_size FROM proces_verbals WHERE id = ?',
+  ).bind(existingId).first<{pdf_object_key:string;file_name:string|null;file_size:number|null}>() : null;
+  let pdf = existing ? { objectKey: existing.pdf_object_key, fileName: existing.file_name ?? undefined, fileSize: existing.file_size ?? undefined } : null;
+  if (file instanceof File && file.size > 0) pdf = await saveProcesVerbalPdf(file, id, env);
+  if (!pdf) throw new Error('pdf file is required.');
+  await db.prepare(`INSERT INTO proces_verbals (
+      id, title, year, issue_date, description, pdf_object_key, file_name, file_size, published, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(id) DO UPDATE SET title=excluded.title, year=excluded.year, issue_date=excluded.issue_date,
+      description=excluded.description, pdf_object_key=excluded.pdf_object_key, file_name=excluded.file_name,
+      file_size=excluded.file_size, published=excluded.published, updated_at=CURRENT_TIMESTAMP`)
+    .bind(id, title, year, issueDate, description ?? null, pdf.objectKey, pdf.fileName ?? null,
+      pdf.fileSize ?? null, published ? 1 : 0).run();
+  return json({ ok: true, id, pdfUrl: publicProcesVerbalUrl(pdf.objectKey) });
+}
+
+async function deleteProcesVerbal(id: string, env: WangenEnv) {
+  await requireDb(env).prepare('DELETE FROM proces_verbals WHERE id = ?').bind(id).run();
+  return json({ ok: true });
+}
+
 async function deleteBulletin(bulletinId: string, env: WangenEnv) {
   const db = requireDb(env);
 
@@ -1043,6 +1129,21 @@ async function bulletinFile(request: Request, env: WangenEnv, objectKey: string)
   return new Response(object.body, { headers });
 }
 
+async function procesVerbalFile(request: Request, env: WangenEnv, objectKey: string) {
+  if (!env.EVENT_IMAGES) return new Response('EVENT_IMAGES binding is not configured.', { status: 503 });
+  const object = await env.EVENT_IMAGES.get(objectKey);
+  if (!object) return new Response(null, { status: 404 });
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set('etag', object.httpEtag);
+  headers.set('Content-Type', headers.get('Content-Type') ?? 'application/pdf');
+  headers.set('Cache-Control', 'public, max-age=3600');
+  if (new URL(request.url).searchParams.get('download') === '1') {
+    headers.set('Content-Disposition', `attachment; filename="${objectKey.split('/').pop() ?? 'proces-verbal.pdf'}"`);
+  }
+  return new Response(object.body, { headers });
+}
+
 async function handleApi(request: Request, env: WangenEnv) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -1054,6 +1155,21 @@ async function handleApi(request: Request, env: WangenEnv) {
 
     if (request.method === 'GET' && path === '/api/bulletins') {
       return publicBulletins(env);
+    }
+
+    if (request.method === 'GET' && (path === '/api/procesverbal' || path === '/api/proces-verbaux')) {
+      const response = await publicProcesVerbaux(env);
+      if (path === '/api/procesverbal') {
+        const payload = await response.json() as { procesVerbaux: ProcesVerbal[]; source: string };
+        return json({ procesverbaux: payload.procesVerbaux, source: payload.source });
+      }
+      return response;
+    }
+
+    if (request.method === 'GET' && path.startsWith('/api/procesverbal/files/')) {
+      const target = new URL(request.url);
+      target.pathname = `${PROCES_VERBAL_FILE_PREFIX}${path.replace('/api/procesverbal/files/', '')}`;
+      return Response.redirect(target.toString(), 308);
     }
 
     if (request.method === 'GET' && path.startsWith('/api/bulletins/files/')) {
@@ -1087,12 +1203,25 @@ async function handleApi(request: Request, env: WangenEnv) {
       return adminBulletins(env);
     }
 
+    if ((path === '/api/admin/procesverbal' || path === '/api/admin/proces-verbaux') && request.method === 'GET') {
+      const response = await adminProcesVerbaux(env);
+      if (path === '/api/admin/procesverbal') {
+        const payload = await response.json() as { procesVerbaux: ProcesVerbal[]; source: string };
+        return json({ procesverbaux: payload.procesVerbaux, source: payload.source }, { headers: { 'Cache-Control': 'private, no-store' } });
+      }
+      return response;
+    }
+
     if (path === '/api/admin/events' && request.method === 'POST') {
       return upsertEvent(request, env);
     }
 
     if (path === '/api/admin/bulletins' && request.method === 'POST') {
       return upsertBulletin(request, env);
+    }
+
+    if ((path === '/api/admin/procesverbal' || path === '/api/admin/proces-verbaux') && request.method === 'POST') {
+      return upsertProcesVerbal(request, env);
     }
 
     if (path === '/api/admin/event-images' && request.method === 'POST') {
@@ -1131,6 +1260,13 @@ async function handleApi(request: Request, env: WangenEnv) {
       }
     }
 
+    const procesVerbalMatch = path.match(/^\/api\/admin\/(?:procesverbal|proces-verbaux)\/([^/]+)$/);
+    if (procesVerbalMatch?.[1]) {
+      const id = decodeURIComponent(procesVerbalMatch[1]);
+      if (request.method === 'PUT') return upsertProcesVerbal(request, env, id);
+      if (request.method === 'DELETE') return deleteProcesVerbal(id, env);
+    }
+
     return json({ error: 'Not found' }, { status: 404 });
   } catch (error) {
     return json(
@@ -1155,12 +1291,20 @@ export default {
       return publicBulletins(env);
     }
 
+    if (request.method === 'GET' && url.pathname === PROCES_VERBAUX_DATA_PATH) {
+      return publicProcesVerbaux(env);
+    }
+
     if (request.method === 'GET' && url.pathname.startsWith(BULLETIN_FILE_PREFIX)) {
       return bulletinFile(
         request,
         env,
         decodeURIComponent(url.pathname.replace(BULLETIN_FILE_PREFIX, '')),
       );
+    }
+
+    if (request.method === 'GET' && url.pathname.startsWith(PROCES_VERBAL_FILE_PREFIX)) {
+      return procesVerbalFile(request, env, decodeURIComponent(url.pathname.replace(PROCES_VERBAL_FILE_PREFIX, '')));
     }
 
     if (url.pathname.startsWith('/api/')) {

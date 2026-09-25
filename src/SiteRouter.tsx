@@ -15,6 +15,8 @@ import {
   loadContent,
 } from './lib/contentApi';
 import { trackPageView } from './lib/pageAnalytics';
+import AdminProcesVerbauxPage from './pages/AdminPVPage';
+import ProcesVerbauxPage from './pages/ProcesVerbauxPage';
 
 function normalizePathname(pathname: string) {
   if (!pathname) {
@@ -107,6 +109,10 @@ export default function SiteRouter() {
     return <AdminBulletinsPage />;
   }
 
+  if (pathname === '/admin/proces-verbaux') {
+    return <AdminProcesVerbauxPage />;
+  }
+
   if (!associations) {
     return (
       <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -129,6 +135,10 @@ export default function SiteRouter() {
 
   if (pathname === '/bulletins') {
     return <BulletinsPage />;
+  }
+
+  if (pathname === '/proces-verbaux') {
+    return <ProcesVerbauxPage />;
   }
 
   const segments = pathname.split('/').filter(Boolean);
